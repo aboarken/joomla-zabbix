@@ -1,7 +1,5 @@
 # Joomla Zabbix
 
-**Integrate Zabbix with Joomla to provide a centralized IT monitoring portal for users.**
-
 `com_zabbix` is a Joomla 6 component that brings **Zabbix 7.4** into your Joomla site through the
 Zabbix JSON-RPC API. Users log in to Joomla and see Zabbix **dashboards** and **hosts**, drawn by
 Joomla with live data. Each user sees only what their own Zabbix user may see.
