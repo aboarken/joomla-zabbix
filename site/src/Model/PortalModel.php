@@ -10,7 +10,9 @@ namespace ZabbixPortal\Component\Zabbix\Site\Model;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Access\Exception\NotAllowed;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
@@ -20,13 +22,17 @@ use ZabbixPortal\Component\Zabbix\Administrator\Support\Formatter;
 
 /**
  * Base of the portal models: the logged-in user's Zabbix access scope, settings and formatter.
- * The display controller has already checked login, permission and the mapping.
+ * DisplayController checks login, permission and the mapping first; scope() checks login and
+ * the page's permission again, so a model never gives data when reached another way.
  */
 abstract class PortalModel extends BaseDatabaseModel
 {
     use ComponentAccess;
 
     private ?AccessScope $scope = null;
+
+    /** The Joomla permission this page needs (access.xml). */
+    abstract protected function permission(): string;
 
     /** @throws ZabbixException */
     public function scope(): AccessScope
@@ -35,7 +41,12 @@ abstract class PortalModel extends BaseDatabaseModel
             return $this->scope;
         }
 
-        $user     = Factory::getApplication()->getIdentity();
+        $user = Factory::getApplication()->getIdentity();
+
+        if ($user === null || $user->guest || !$user->authorise($this->permission(), 'com_zabbix')) {
+            throw new NotAllowed(Text::_('COM_ZABBIX_NOT_AUTHORISED'), 403);
+        }
+
         $identity = $this->zabbix()->getIdentityResolver()->resolve((int) $user->id, (string) $user->username, (string) $user->email);
 
         if ($identity->zabbixUser === null) {

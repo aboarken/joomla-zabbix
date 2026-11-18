@@ -13,7 +13,7 @@
     return text || fallback || key;
   };
 
-  /** Create an element: el('td', {class: 'x', text: 'y'}, [children]). */
+  /** Create an element: el('td', {class: 'x', text: 'y', style: {color: 'red'}}, [children]). */
   const el = (tag, attrs = {}, children = []) => {
     const node = document.createElement(tag);
 
@@ -24,6 +24,9 @@
 
       if (name === 'text') {
         node.textContent = value;
+      } else if (name === 'style') {
+        // As properties, not as a style attribute: allowed by a strict Content Security Policy.
+        Object.entries(value).forEach(([property, v]) => node.style.setProperty(property, String(v)));
       } else if (name === 'class') {
         node.className = value;
       } else {

@@ -19,6 +19,11 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface
 {
     private const TABLE = '#__zabbix_audit';
 
+    /** Entries older than this are deleted (about one write in PURGE_EVERY does it). */
+    public const KEEP_DAYS = 365;
+
+    private const PURGE_EVERY = 50;
+
     public function __construct(
         private readonly DatabaseInterface $db,
         private readonly LoggerInterface $logger
@@ -41,6 +46,21 @@ final class DbAuditLog implements AuditLogInterface, AuditCounterInterface
             $this->db->insertObject(self::TABLE, $row);
         } catch (\Throwable) {
             $this->logger->error(\sprintf('Audit write failed for action %s, user %d', $row->action, $row->user_id));
+
+            return;
+        }
+
+        try {
+            if (random_int(1, self::PURGE_EVERY) === 1) {
+                $before = gmdate('Y-m-d H:i:s', time() - self::KEEP_DAYS * 86400);
+                $query  = $this->db->createQuery()
+                    ->delete($this->db->quoteName(self::TABLE))
+                    ->where($this->db->quoteName('created') . ' < :before')
+                    ->bind(':before', $before);
+                $this->db->setQuery($query)->execute();
+            }
+        } catch (\Throwable) {
+            $this->logger->warning('Old audit entries could not be deleted');
         }
     }
 

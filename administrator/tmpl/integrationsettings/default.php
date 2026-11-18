@@ -50,6 +50,8 @@ $test = $this->test;
 
     <?php if (str_starts_with(strtolower($this->apiUrl), 'http://')) : ?>
         <div class="alert alert-warning"><?php echo Text::_('COM_ZABBIX_SETTINGS_WARN_HTTP'); ?></div>
+    <?php elseif ($this->apiUrl !== '' && !$this->verifiesTls) : ?>
+        <div class="alert alert-warning"><?php echo Text::_('COM_ZABBIX_SETTINGS_WARN_TLS_OFF'); ?></div>
     <?php endif; ?>
 
     <fieldset class="options-form">

@@ -10,7 +10,9 @@ namespace ZabbixPortal\Component\Zabbix\Site\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
+use Joomla\CMS\Router\Exception\RouteNotFoundException;
 use Joomla\CMS\Session\Session;
 use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
@@ -22,12 +24,22 @@ use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\Period;
  *  - task=data.widget&dashboard=ID&widget=ID[&period=1h]  one dashboard widget;
  *  - task=data.history&host=ID&item=ID&period=1h        a host's item chart.
  *
- * Same checks as the pages (login, permission, mapped Zabbix user) plus the session token, and
- * every answer is limited to what the mapped Zabbix user may see.
+ * Same checks as the pages (login, permission, mapped Zabbix user) plus the session token, sent
+ * in the X-CSRF-Token header, and every answer is limited to what the mapped Zabbix user may see.
  */
 final class DataController extends BaseController
 {
     use PortalTrait;
+
+    /**
+     * This controller shows no pages. Joomla gives every controller a "display" task (also used
+     * for unknown tasks), which would render a portal view without the checks of
+     * DisplayController; it is refused here.
+     */
+    public function display($cachable = false, $urlparams = [])
+    {
+        throw new RouteNotFoundException(Text::_('JERROR_PAGE_NOT_FOUND'), 404);
+    }
 
     public function widget(): void
     {
@@ -60,6 +72,8 @@ final class DataController extends BaseController
             $this->send(['data' => $data]);
         } catch (ZabbixException $e) {
             $this->failed($e);
+        } catch (\Throwable $e) {
+            $this->crashed($e);
         }
     }
 
@@ -97,6 +111,8 @@ final class DataController extends BaseController
             ]]);
         } catch (ZabbixException $e) {
             $this->failed($e);
+        } catch (\Throwable $e) {
+            $this->crashed($e);
         }
     }
 
@@ -111,6 +127,8 @@ final class DataController extends BaseController
             return null;
         }
 
+        // The token comes in the X-CSRF-Token header (checkToken() reads it first), so it is
+        // never part of a URL that ends up in logs or the browser history.
         if (!Session::checkToken('get') || !$user->authorise($permission, 'com_zabbix')) {
             $this->send(['error' => 'forbidden'], 403);
 
@@ -140,10 +158,18 @@ final class DataController extends BaseController
         $this->send(['error' => $e->getKind()], 502);
     }
 
+    /** Anything unexpected: a JSON error without details, never an HTML error page. */
+    private function crashed(\Throwable $e): void
+    {
+        $this->zabbix()->getLogger()->error('Portal data: ' . $e::class);
+        $this->send(['error' => 'error'], 500);
+    }
+
     /** @param array<string, mixed> $payload */
     private function send(array $payload, int $status = 200): void
     {
         $this->app->setHeader('Content-Type', 'application/json; charset=utf-8', true);
+        $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
         $this->app->setHeader('status', (string) $status, true);
         $this->app->sendHeaders();
         echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);

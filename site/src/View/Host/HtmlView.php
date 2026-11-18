@@ -64,7 +64,8 @@ final class HtmlView extends BaseHtmlView
         }
 
         $this->config = [
-            'endpoint' => Route::_('index.php?option=com_zabbix&task=data.history&format=json&' . Session::getFormToken() . '=1', false),
+            'endpoint' => Route::_('index.php?option=com_zabbix&task=data.history&format=json', false),
+            'token'     => Session::getFormToken(),
             'host'     => $hostId,
             'format'   => $this->f->jsFormats(),
             'periods'  => array_keys(Period::CHOICES),

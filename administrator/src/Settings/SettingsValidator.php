@@ -165,7 +165,7 @@ final class SettingsValidator
             $errors[] = 'COM_ZABBIX_SETTINGS_ERR_CACHE';
         }
 
-        $values['cache_minutes'] = (string) max(0, min(Settings::MAX_CACHE_MINUTES, $cache ?? 2));
+        $values['cache_minutes'] = (string) max(0, min(Settings::MAX_CACHE_MINUTES, $cache ?? 5));
 
         $date                  = self::str($input['date_format'] ?? '');
         $time                  = self::str($input['time_format'] ?? '');

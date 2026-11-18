@@ -71,7 +71,7 @@
             <option value="1">JYES</option>
         </field>
         <field name="cache_minutes" type="number" label="COM_ZABBIX_SETTINGS_CACHE_MINUTES" description="COM_ZABBIX_SETTINGS_CACHE_MINUTES_DESC"
-               default="2" min="0" max="60" filter="integer" required="true" />
+               default="5" min="0" max="60" filter="integer" required="true" />
         <field name="date_format" type="list" label="COM_ZABBIX_SETTINGS_DATE_FORMAT" description="COM_ZABBIX_SETTINGS_DATE_FORMAT_DESC" default="d/m/Y" validate="options">
             <option value="d/m/Y">05/11/2026</option>
             <option value="Y-m-d">2026-11-05</option>

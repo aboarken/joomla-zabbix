@@ -91,7 +91,8 @@ final class HtmlView extends BaseHtmlView
         $refresh = $params !== null && (string) $params->get('refresh', '') !== '' ? (int) $params->get('refresh') : $model->settings()->refreshSeconds();
 
         $this->config = [
-            'endpoint'  => Route::_('index.php?option=com_zabbix&task=data.widget&format=json&' . Session::getFormToken() . '=1', false),
+            'endpoint'  => Route::_('index.php?option=com_zabbix&task=data.widget&format=json', false),
+            'token'     => Session::getFormToken(),
             'dashboard' => $this->currentId,
             'refresh'   => max(0, $refresh),
             'zabbix'    => $model->settings()->frontendUrl(),

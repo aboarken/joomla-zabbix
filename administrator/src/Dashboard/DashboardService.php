@@ -20,8 +20,6 @@ use ZabbixPortal\Component\Zabbix\Administrator\Cache\CacheInterface;
  */
 final class DashboardService
 {
-    private const TTL = 300;
-
     public function __construct(
         private readonly JsonRpcClient $client,
         private readonly CacheInterface $cache
@@ -44,7 +42,7 @@ final class DashboardService
             ]);
 
             return array_values(array_filter(\is_array($rows) ? $rows : [], 'is_array'));
-        }, self::TTL);
+        });
     }
 
     /**
@@ -99,7 +97,7 @@ final class DashboardService
             ]);
 
             return \is_array($rows) && \is_array($rows[0] ?? null) ? DashboardLayout::fromApi($rows[0]) : [];
-        }, self::TTL);
+        });
 
         return isset($layout['pages']) ? $layout : null;
     }

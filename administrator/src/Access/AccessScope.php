@@ -101,6 +101,27 @@ final class AccessScope
     }
 
     /**
+     * The groups of a visible host that may be named to this user: for anyone but a Super admin,
+     * only host groups they can read. (A host can also be in groups the user has no rights on;
+     * those names are not shown.)
+     *
+     * @param  list<array{groupid: string, name: string}>  $groups
+     * @return list<array{groupid: string, name: string}>
+     */
+    public function namedGroups(array $groups): array
+    {
+        if ($this->disabled) {
+            return [];
+        }
+
+        if ($this->all()) {
+            return array_values($groups);
+        }
+
+        return array_values(array_filter($groups, fn (array $g): bool => \in_array((string) $g['groupid'], $this->readGroupIds, true)));
+    }
+
+    /**
      * Is a dashboard (from dashboard.get with selectUsers and selectUserGroups) visible?
      *
      * @param array<string, mixed> $dashboard

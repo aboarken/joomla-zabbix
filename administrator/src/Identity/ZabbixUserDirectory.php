@@ -14,13 +14,12 @@ use ZabbixPortal\Component\Zabbix\Administrator\Api\JsonRpcClient;
 use ZabbixPortal\Component\Zabbix\Administrator\Cache\CacheInterface;
 
 /**
- * Zabbix users from user.get, kept in the shared cache for ten minutes. The token's user must be
+ * Zabbix users from user.get, kept in the shared cache for the cache time of Integration
+ * Settings. The token's user must be
  * a Super admin to see other users (Find Endpoints checks this).
  */
 final class ZabbixUserDirectory implements UserDirectoryInterface
 {
-    private const TTL = 600;
-
     /** @var array<string, DirectoryUser>|null */
     private ?array $users = null;
 
@@ -73,7 +72,7 @@ final class ZabbixUserDirectory implements UserDirectoryInterface
                 }
             }
 
-            $this->cache->set(0, 'directory', $rows, self::TTL);
+            $this->cache->set(0, 'directory', $rows);
         }
 
         $this->users = [];
