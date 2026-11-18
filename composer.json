@@ -1,0 +1,28 @@
+{
+    "name": "zabbixportal/com_zabbix",
+    "description": "Joomla 6 component: read-only Zabbix 7.4 monitoring portal (development tooling only; not part of the installable package)",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=8.3"
+    },
+    "require-dev": {
+        "joomla/database": "^4.0",
+        "phpunit/phpunit": "^11.5",
+        "psr/log": "^3.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ZabbixPortal\\Component\\Zabbix\\Administrator\\": "administrator/src/",
+            "ZabbixPortal\\Component\\Zabbix\\Site\\": "site/src/",
+            "ZabbixPortal\\Component\\Zabbix\\Tests\\": "tests/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {}
+    },
+    "scripts": {
+        "test": "phpunit"
+    }
+}

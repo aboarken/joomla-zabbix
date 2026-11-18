@@ -1,0 +1,63 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_zabbix",
+  "version": "1.0.0",
+  "description": "Zabbix portal assets",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "com_zabbix.admin",
+      "type": "style",
+      "uri": "com_zabbix/admin.css"
+    },
+    {
+      "name": "com_zabbix.admin",
+      "type": "script",
+      "uri": "com_zabbix/admin.js",
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_zabbix.portal",
+      "type": "style",
+      "uri": "com_zabbix/portal.css"
+    },
+    {
+      "name": "com_zabbix.portal",
+      "type": "script",
+      "uri": "com_zabbix/portal.js",
+      "dependencies": ["core"],
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_zabbix.charts",
+      "type": "script",
+      "uri": "com_zabbix/charts.js",
+      "dependencies": ["com_zabbix.portal"],
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_zabbix.dashboard",
+      "type": "script",
+      "uri": "com_zabbix/dashboard.js",
+      "dependencies": ["com_zabbix.charts"],
+      "attributes": {
+        "defer": true
+      }
+    },
+    {
+      "name": "com_zabbix.host",
+      "type": "script",
+      "uri": "com_zabbix/host.js",
+      "dependencies": ["com_zabbix.charts"],
+      "attributes": {
+        "defer": true
+      }
+    }
+  ]
+}

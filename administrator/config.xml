@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Only permissions live here. The Zabbix connection and other settings are stored in
+    #__zabbix_settings through Integration Settings, because com_config replaces all component
+    params on save and the API token must be encrypted before it is stored.
+-->
+<config>
+    <fieldset name="permissions" label="JCONFIG_PERMISSIONS_LABEL" description="JCONFIG_PERMISSIONS_DESC">
+        <field name="rules" type="rules" label="JCONFIG_PERMISSIONS_LABEL" filter="rules" validate="rules"
+               component="com_zabbix" section="component" />
+    </fieldset>
+</config>

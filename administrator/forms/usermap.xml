@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The Zabbix user list is filled in by UsermapModel from user.get. -->
+<form>
+    <fieldset name="mapping">
+        <field name="joomla_user_id" type="user" label="COM_ZABBIX_MAPPING_JOOMLA_USER" required="true" filter="integer" />
+        <field name="zabbix_userid" type="list" label="COM_ZABBIX_MAPPING_ZABBIX_USER" description="COM_ZABBIX_MAPPING_ZABBIX_USER_DESC"
+               required="true" filter="integer" layout="joomla.form.field.list-fancy-select">
+            <option value="">COM_ZABBIX_MAPPING_SELECT_ZABBIX_USER</option>
+        </field>
+    </fieldset>
+</form>
