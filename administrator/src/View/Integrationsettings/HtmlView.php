@@ -30,6 +30,9 @@ final class HtmlView extends BaseHtmlView
 
     public string $apiUrl = '';
 
+    /** Connect via as "host:port", or ''. */
+    public string $connectVia = '';
+
     /** @var array<string, mixed>|null the last Test Connection result */
     public ?array $test = null;
 
@@ -44,6 +47,7 @@ final class HtmlView extends BaseHtmlView
         $this->secretEnvTooShort = $model->secretEnvTooShort();
         $this->hasToken          = $settings->hasToken();
         $this->apiUrl            = $settings->apiUrl();
+        $this->connectVia        = $settings->connectVia();
         $test                    = Factory::getApplication()->getUserState(SettingsController::STATE_TEST);
         $this->test              = \is_array($test) ? $test : null;
 

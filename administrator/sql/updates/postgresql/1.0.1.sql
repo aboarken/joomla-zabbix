@@ -1,0 +1,1 @@
+-- 1.0.1: no database changes (Port and Connect via are rows of #__zabbix_settings).

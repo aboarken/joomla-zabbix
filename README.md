@@ -13,7 +13,7 @@ read methods (`*.get`) only and never changes anything in Zabbix.
 
 | Menu | What it does |
 |---|---|
-| **Integration Settings** | The Zabbix address and **API token**. The token is encrypted at rest (AES-256-GCM) and never shown again. Also: TLS verification and a custom CA bundle, timeouts, *Open in Zabbix* links, user-matching rules, dashboard refresh, cache, date/time format and time zone. **Test Connection** checks the Zabbix version and the token's user. **Clear Cache** empties the cache. |
+| **Integration Settings** | The Zabbix address, an optional **Port** and **Connect via**, and the **API token**. The token is encrypted at rest (AES-256-GCM) and never shown again. Also: TLS verification and a custom CA bundle, timeouts, *Open in Zabbix* links, user-matching rules, dashboard refresh, cache, date/time format and time zone. **Test Connection** checks the Zabbix version and the token's user. **Clear Cache** empties the cache. |
 | **User Mappings** | Links each Joomla user to one Zabbix user. Users are matched **automatically** by username and/or e-mail (from the Zabbix user's media) on their first visit, or by **Auto-match All**. Mappings can also be set by hand. Actions: Confirm, Suspend, Rematch, Remove. A user's edit page shows **what that user will see**: role, readable and denied host groups, and dashboards. |
 | **Find Endpoints** | API discovery and diagnostics. It shows the server version and response time, the token's user, role and the role's API rules (warning if the role allows write methods), and each API method the portal uses with its result: *allowed*, *denied* or *error*. It also shows what the token can see (host groups, hosts, templates, users, dashboards, problems) and every dashboard with the widget types it uses, marking those the portal does not draw. Ends with a **Copy diagnostics** button (no secrets). |
 
@@ -100,6 +100,28 @@ the damage if the token ever leaks.
    for the groups that should use the portal (e.g. *Registered*). Nothing is allowed by default.
 6. **Menus**: add menu items of type **Zabbix → Zabbix Dashboard** and **Zabbix → Zabbix Hosts**.
    Give them the access level *Registered*, so only logged-in users see them in the menu.
+
+### Port and Connect via (Zabbix hosted locally)
+
+Both are optional and can be used together:
+
+- **Port**: use it when Zabbix is published on another port than 443 (https) or 80 (http). For
+  example, with the address `https://zabbix.example.org` and Port `8443`, the portal calls
+  `https://zabbix.example.org:8443/api_jsonrpc.php`. The *Open in Zabbix* links use the same
+  port.
+- **Connect via**: use it when Zabbix runs on your local network and the Joomla server reaches it
+  from outside through another address, for example a public IP with port forwarding. Enter
+  `host`, `host:port` or `IP:port`, e.g. `203.0.113.10:8443`. Without a port, the port of the
+  Zabbix address is used. Joomla opens the connection to that address but keeps the host name of
+  the Zabbix address for the TLS certificate check and the HTTP Host header, so the certificate
+  issued for that name stays valid.
+
+Example: Zabbix is `https://zabbix.school.local` on your network, and your router forwards
+public port 8443 to it. Set the Zabbix address to `https://zabbix.school.local` and Connect via
+to `<public IP>:8443`. The status box and Find Endpoints show the Connect via address in use.
+
+If the users' browsers reach Zabbix at a different address than the Joomla server does, set
+*Zabbix address for links* as well.
 
 ### Encryption secret
 

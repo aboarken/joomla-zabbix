@@ -43,7 +43,8 @@ final class EndpointsController extends BaseController
         }
 
         try {
-            $report = $this->component()->getEndpointProbe()->run();
+            $report = $this->component()->getEndpointProbe()->run()
+                + ['via' => $this->component()->getSettingsRepository()->load()->connectVia()];
             $this->app->setUserState(self::STATE_REPORT, $report);
             $audit->record($this->actorId(), 'endpoints.run', AuditLogInterface::RESULT_OK, 'Zabbix ' . $report['version'], $this->actorId());
             $this->app->enqueueMessage(

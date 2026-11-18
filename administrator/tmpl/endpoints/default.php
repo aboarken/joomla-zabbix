@@ -43,6 +43,8 @@ $status = ['allowed' => 'bg-success', 'denied' => 'bg-danger', 'error' => 'bg-wa
                         <dl class="row mb-0">
                             <dt class="col-sm-4"><?php echo Text::_('COM_ZABBIX_SETTINGS_API_ENDPOINT'); ?></dt>
                             <dd class="col-sm-8"><code><?php echo $this->escape((string) $r['url']); ?></code></dd>
+                            <dt class="col-sm-4"><?php echo Text::_('COM_ZABBIX_SETTINGS_CONNECT_VIA_STATUS'); ?></dt>
+                            <dd class="col-sm-8"><?php echo ($r['via'] ?? '') !== '' ? '<code>' . $this->escape((string) $r['via']) . '</code>' : Text::_('COM_ZABBIX_SETTINGS_DIRECT'); ?></dd>
                             <dt class="col-sm-4"><?php echo Text::_('COM_ZABBIX_TEST_VERSION'); ?></dt>
                             <dd class="col-sm-8"><?php echo $this->escape((string) $r['version']); ?>
                                 <?php if (!$r['version_ok']) : ?><span class="badge bg-warning text-dark"><?php echo Text::_('COM_ZABBIX_TEST_VERSION_WARN'); ?></span><?php endif; ?></dd>

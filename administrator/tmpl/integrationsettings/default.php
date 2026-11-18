@@ -33,6 +33,8 @@ $test = $this->test;
             <ul class="list-unstyled mb-0">
                 <li><?php echo Text::_('COM_ZABBIX_SETTINGS_API_ENDPOINT'); ?>:
                     <strong><?php echo $this->apiUrl !== '' ? $this->escape($this->apiUrl) : Text::_('COM_ZABBIX_SETTINGS_NOT_SET'); ?></strong></li>
+                <li><?php echo Text::_('COM_ZABBIX_SETTINGS_CONNECT_VIA_STATUS'); ?>:
+                    <strong><?php echo $this->connectVia !== '' ? $this->escape($this->connectVia) : Text::_('COM_ZABBIX_SETTINGS_DIRECT'); ?></strong></li>
                 <li><?php echo Text::_('COM_ZABBIX_SETTINGS_TOKEN_STATUS'); ?>:
                     <strong><?php echo Text::_($this->hasToken ? 'COM_ZABBIX_SETTINGS_STORED' : 'COM_ZABBIX_SETTINGS_NOT_SET'); ?></strong></li>
                 <li><?php echo Text::_('COM_ZABBIX_SETTINGS_SECRET_SOURCE'); ?>: <strong><?php echo Text::_($secretLabel); ?></strong></li>
@@ -63,6 +65,9 @@ $test = $this->test;
                 <?php if (!empty($test['error'])) : ?>
                     <div class="alert alert-danger mb-0">
                         <?php echo Text::_('COM_ZABBIX_ERROR_' . strtoupper((string) $test['error'])); ?>
+                        <?php if (\in_array($test['error'], ['network', 'tls', 'http', 'invalid_response'], true)) : ?>
+                            <div class="small mt-1"><?php echo Text::_('COM_ZABBIX_TEST_HINT_NETWORK'); ?></div>
+                        <?php endif; ?>
                         <?php if (($test['detail'] ?? '') !== '') : ?>
                             <div class="small mt-1"><code><?php echo $this->escape((string) $test['detail']); ?></code></div>
                         <?php endif; ?>

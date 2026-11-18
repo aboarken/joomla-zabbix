@@ -7,6 +7,10 @@
     <fieldset name="connection" label="COM_ZABBIX_SETTINGS_FIELDSET_CONNECTION">
         <field name="zabbix_url" type="url" label="COM_ZABBIX_SETTINGS_URL" description="COM_ZABBIX_SETTINGS_URL_DESC"
                hint="https://zabbix.example.org" filter="string" size="60" maxlength="300" validate="url" schemes="http,https" />
+        <field name="zabbix_port" type="number" label="COM_ZABBIX_SETTINGS_PORT" description="COM_ZABBIX_SETTINGS_PORT_DESC"
+               hint="8443" min="1" max="65535" filter="string" />
+        <field name="connect_via" type="text" label="COM_ZABBIX_SETTINGS_CONNECT_VIA" description="COM_ZABBIX_SETTINGS_CONNECT_VIA_DESC"
+               hint="203.0.113.10:8443" filter="string" size="40" maxlength="300" />
         <field name="api_token" type="password" label="COM_ZABBIX_SETTINGS_TOKEN" description="COM_ZABBIX_SETTINGS_TOKEN_DESC"
                autocomplete="new-password" filter="unset" lock="false" maxlength="128" />
         <field name="clear_api_token" type="checkbox" label="COM_ZABBIX_SETTINGS_CLEAR_TOKEN" description="COM_ZABBIX_SETTINGS_CLEAR_TOKEN_DESC"
