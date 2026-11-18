@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<extension type="component" method="upgrade">
+    <name>com_zabbix</name>
+    <author>Zabbix Portal</author>
+    <authorUrl>https://github.com/aboarken/joomla-zabbix</authorUrl>
+    <creationDate>2026-11</creationDate>
+    <copyright>(C) 2026</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.0.0</version>
+    <description>COM_ZABBIX_XML_DESCRIPTION</description>
+    <namespace path="src">ZabbixPortal\Component\Zabbix</namespace>
+
+    <scriptfile>script.php</scriptfile>
+
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+            <file driver="postgresql" charset="utf8">sql/install.postgresql.utf8.sql</file>
+        </sql>
+    </install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+            <file driver="postgresql" charset="utf8">sql/uninstall.postgresql.utf8.sql</file>
+        </sql>
+    </uninstall>
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+            <schemapath type="postgresql">sql/updates/postgresql</schemapath>
+        </schemas>
+    </update>
+
+    <files folder="site">
+        <folder>language</folder>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+    </files>
+
+    <media destination="com_zabbix" folder="media">
+        <filename>joomla.asset.json</filename>
+        <folder>css</folder>
+        <folder>js</folder>
+    </media>
+
+    <!-- Joomla checks this for updates (System > Update > Extensions). The files are attached to
+         every GitHub release by .github/workflows/release.yml. -->
+    <changelogurl>https://github.com/aboarken/joomla-zabbix/releases/latest/download/changelog.xml</changelogurl>
+
+    <updateservers>
+        <server type="extension" priority="1" name="Zabbix Portal">https://github.com/aboarken/joomla-zabbix/releases/latest/download/updates.xml</server>
+    </updateservers>
+
+    <administration>
+        <menu img="class:chart-line">COM_ZABBIX</menu>
+        <submenu>
+            <menu link="option=com_zabbix&amp;view=integrationsettings">COM_ZABBIX_SUBMENU_SETTINGS</menu>
+            <menu link="option=com_zabbix&amp;view=usermappings">COM_ZABBIX_SUBMENU_MAPPINGS</menu>
+            <menu link="option=com_zabbix&amp;view=endpoints">COM_ZABBIX_SUBMENU_ENDPOINTS</menu>
+        </submenu>
+        <files folder="administrator">
+            <filename>access.xml</filename>
+            <filename>config.xml</filename>
+            <folder>forms</folder>
+            <folder>language</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+    </administration>
+</extension>

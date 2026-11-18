@@ -1,0 +1,1 @@
+-- 1.0.0: first release (tables are created by install.postgresql.utf8.sql).

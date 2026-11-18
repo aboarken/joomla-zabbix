@@ -1,0 +1,122 @@
+# Builds the Joomla installation package (com_zabbix.zip), the Joomla update server file
+# (updates.xml) and the Joomla changelog (changelog.xml), and attaches them to GitHub releases.
+# Joomla sites find updates through releases/latest/download/updates.xml (see <updateservers> in
+# zabbix.xml) and the changelog through releases/latest/download/changelog.xml.
+#
+# - Pull requests and pushes to main: build and check the package, keep it as a workflow artifact.
+# - Release published in the GitHub UI (tag v<version>): build from that tag, check that the tag
+#   matches the manifest version, and attach com_zabbix.zip and updates.xml to the release.
+# - Run manually (Actions > Release package > Run workflow): create release v<manifest version>
+#   from main with docs/release-notes/<version>.md as notes, and attach both files.
+name: Release package
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+
+      - name: Read version from manifest
+        id: version
+        run: |
+          version="$(sed -n 's:.*<version>\(.*\)</version>.*:\1:p' zabbix.xml | head -n1)"
+          test -n "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Manifest version: $version"
+
+      - name: Check release tag matches the manifest
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          if [ "${TAG#v}" != "$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match manifest version $VERSION (expected v$VERSION)."
+            exit 1
+          fi
+
+      - name: Lint PHP
+        run: |
+          php -v | head -n1
+          find administrator site script.php -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
+
+      - name: Install test tools (development only; not part of the package)
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Run automated tests (fake database; no Zabbix server needed)
+        run: vendor/bin/phpunit
+
+      - name: Build package
+        run: |
+          build/build-package.sh
+          cp "dist/com_zabbix-${{ steps.version.outputs.version }}.zip" dist/com_zabbix.zip
+
+      - name: Check package structure
+        run: python3 -I build/verify-package.py dist/com_zabbix.zip "${{ steps.version.outputs.version }}"
+
+      - name: Write Joomla update file
+        run: |
+          python3 -I build/make-update-xml.py dist/com_zabbix.zip "${{ steps.version.outputs.version }}" dist/updates.xml
+          python3 -I -c "import xml.etree.ElementTree as E; E.parse('dist/updates.xml')"
+
+      - name: Write Joomla changelog file
+        run: |
+          python3 -I build/make-changelog-xml.py CHANGELOG.md dist/changelog.xml
+          python3 -I -c "import xml.etree.ElementTree as E, sys; v = E.parse('dist/changelog.xml').getroot()[0].findtext('version'); sys.exit(0 if v == '${{ steps.version.outputs.version }}' else 'changelog.xml starts with ' + str(v) + ', expected the manifest version')"
+
+      - name: Keep package as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: com_zabbix-${{ steps.version.outputs.version }}
+          path: |
+            dist/com_zabbix.zip
+            dist/updates.xml
+            dist/changelog.xml
+          if-no-files-found: error
+
+      - name: Attach package to the published release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" dist/com_zabbix.zip dist/updates.xml dist/changelog.xml --clobber --repo "$GITHUB_REPOSITORY"
+
+      - name: Create release with package
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="v$VERSION"
+          notes="docs/release-notes/$VERSION.md"
+          if [ ! -f "$notes" ]; then
+            # Fall back to this version's section of the changelog.
+            awk -v v="$VERSION" '$0 ~ "^## \\[" v "\\]" {on=1; next} /^## \[/ {on=0} on' CHANGELOG.md > /tmp/notes.md
+            notes=/tmp/notes.md
+          fi
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $tag exists; replacing its package and update file."
+            gh release upload "$tag" dist/com_zabbix.zip dist/updates.xml dist/changelog.xml --clobber --repo "$GITHUB_REPOSITORY"
+          else
+            gh release create "$tag" dist/com_zabbix.zip dist/updates.xml dist/changelog.xml \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "com_zabbix $VERSION" \
+              --notes-file "$notes"
+          fi

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    None of the portal permissions is granted by default. The administrator sets them to Allowed
+    for the Registered group (or any other group) under Options → Permissions (see README.md).
+-->
+<access component="com_zabbix">
+    <section name="component">
+        <action name="core.admin" title="JACTION_ADMIN" />
+        <action name="core.options" title="JACTION_OPTIONS" />
+        <action name="core.manage" title="JACTION_MANAGE" />
+        <action name="zabbix.dashboard.view" title="COM_ZABBIX_ACCESS_DASHBOARD_VIEW" description="COM_ZABBIX_ACCESS_DASHBOARD_VIEW_DESC" />
+        <action name="zabbix.hosts.view" title="COM_ZABBIX_ACCESS_HOSTS_VIEW" description="COM_ZABBIX_ACCESS_HOSTS_VIEW_DESC" />
+    </section>
+</access>
