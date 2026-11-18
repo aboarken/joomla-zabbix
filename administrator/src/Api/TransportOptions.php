@@ -16,7 +16,9 @@ final class TransportOptions
         public readonly int $connectTimeout = 5,
         public readonly int $timeout = 20,
         public readonly bool $verifyTls = true,
-        public readonly string $caBundle = ''
+        public readonly string $caBundle = '',
+        // CURLOPT_CONNECT_TO entry "url-host:url-port:via-host:via-port" ('' = connect directly)
+        public readonly string $connectTo = ''
     ) {
     }
 }

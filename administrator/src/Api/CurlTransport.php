@@ -20,6 +20,16 @@ final class CurlTransport implements TransportInterface
     /** Larger answers are refused (a page never needs this much). */
     private const MAX_BYTES = 32 * 1024 * 1024;
 
+    /**
+     * cURL error numbers of TLS failures: 35 SSL connect error, 51 peer failed verification,
+     * 58 client certificate problem, 60 certificate not trusted, 77 CA file unreadable.
+     * Numbers, because PHP does not define a constant for each of them.
+     */
+    private const TLS_ERRORS = [35, 51, 58, 60, 77];
+
+    /** cURL error 23: the write callback stopped the transfer (answer too large). */
+    private const WRITE_ERROR = 23;
+
     private ?\CurlHandle $handle = null;
 
     public function post(string $url, array $headers, string $body, TransportOptions $options): array
@@ -52,7 +62,7 @@ final class CurlTransport implements TransportInterface
             CURLOPT_SSL_VERIFYHOST => $options->verifyTls ? 2 : 0,
             CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_ENCODING       => '',
-            CURLOPT_USERAGENT      => 'Joomla-com_zabbix/1.0',
+            CURLOPT_USERAGENT      => 'Joomla-com_zabbix/1.0.1',
             CURLOPT_WRITEFUNCTION  => static function ($ch, string $chunk) use (&$buffer): int {
                 if (\strlen($buffer) + \strlen($chunk) > self::MAX_BYTES) {
                     return 0;
@@ -63,6 +73,12 @@ final class CurlTransport implements TransportInterface
                 return \strlen($chunk);
             },
         ];
+
+        // Connect via: open the connection to another address, keep the URL's host name for the
+        // certificate check (SNI) and the Host header.
+        if ($options->connectTo !== '') {
+            $opts[CURLOPT_CONNECT_TO] = [$options->connectTo];
+        }
 
         if ($options->verifyTls && $options->caBundle !== '') {
             $opts[CURLOPT_CAINFO] = $options->caBundle;
@@ -75,11 +91,11 @@ final class CurlTransport implements TransportInterface
 
         if ($ok === false || $errno !== 0) {
             $error = curl_error($ch);
-            $kind  = \in_array($errno, [CURLE_SSL_CACERT, CURLE_SSL_CONNECT_ERROR, CURLE_SSL_CERTPROBLEM, CURLE_PEER_FAILED_VERIFICATION, 77], true)
+            $kind  = \in_array($errno, self::TLS_ERRORS, true)
                 ? ZabbixException::TLS
                 : ZabbixException::NETWORK;
 
-            if ($errno === CURLE_WRITE_ERROR) {
+            if ($errno === self::WRITE_ERROR) {
                 $error = 'Answer larger than ' . (self::MAX_BYTES >> 20) . ' MB';
                 $kind  = ZabbixException::INVALID_RESPONSE;
             }

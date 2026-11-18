@@ -3,6 +3,16 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] - 2026-11-18
+
+### Added
+- **Integration Settings → Port (optional)**: for a Zabbix front end published on another port than 443 or 80 (e.g. 8443). It is put into the Zabbix address, and the Open in Zabbix links use it too.
+- **Integration Settings → Connect via (optional)**: for a Zabbix server hosted locally and reached from outside through another address (host, host:port or IP:port, e.g. a public IP with port forwarding). Joomla opens the connection to that address but keeps the Zabbix host name for the certificate check and the Host header, so the existing certificate stays valid. Shown in the status box and in Find Endpoints.
+- Test Connection explains what to check when Zabbix cannot be reached.
+
+### Fixed
+- A connection error (wrong address, firewall, timeout, certificate) made pages fail with a PHP error instead of the message *Zabbix could not be reached*.
+
 ## [1.0.0] - 2026-11-18
 
 ### Added

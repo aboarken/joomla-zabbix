@@ -10,6 +10,7 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Settings;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use ZabbixPortal\Component\Zabbix\Administrator\Api\ConnectTarget;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVault;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVaultException;
 
@@ -55,6 +56,34 @@ final class SettingsValidator
         }
 
         $values['zabbix_url'] = $url;
+
+        // Optional port, put into the address.
+        $portText = trim(self::str($input['zabbix_port'] ?? ''));
+        $port     = self::int($portText);
+
+        if ($portText !== '' && ($port === null || $port < 1 || $port > 65535)) {
+            $errors[] = 'COM_ZABBIX_SETTINGS_ERR_PORT';
+            $port     = null;
+        }
+
+        $values['zabbix_port'] = $port !== null && $portText !== '' ? (string) $port : '';
+
+        // Optional Connect via: stored as "host:port" (the port defaults to the address's port).
+        $via = trim(self::str($input['connect_via'] ?? ''));
+
+        if ($via !== '') {
+            $apiUrl = Settings::normaliseApiUrl($url);
+            $apiUrl = $apiUrl !== '' && $values['zabbix_port'] !== '' ? ConnectTarget::withPort($apiUrl, (int) $values['zabbix_port']) : $apiUrl;
+
+            try {
+                $via = ConnectTarget::normaliseConnectVia($via, $apiUrl !== '' ? ConnectTarget::port($apiUrl) : 443);
+            } catch (\InvalidArgumentException) {
+                $errors[] = 'COM_ZABBIX_SETTINGS_ERR_CONNECT_VIA';
+                $via      = '';
+            }
+        }
+
+        $values['connect_via'] = $via;
 
         $frontend = trim(self::str($input['frontend_url'] ?? ''));
 

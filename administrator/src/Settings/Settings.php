@@ -10,6 +10,7 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Settings;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use ZabbixPortal\Component\Zabbix\Administrator\Api\ConnectTarget;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\TransportOptions;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVault;
@@ -37,6 +38,11 @@ final class Settings
     public const DEFAULTS = [
         // Connection: Zabbix front-end address (with or without /api_jsonrpc.php)
         'zabbix_url'      => '',
+        // Optional port put into the Zabbix address ('' = the address's own, or 443/80)
+        'zabbix_port'     => '',
+        // Optional address the connection is opened to instead of the Zabbix host:
+        // "host", "host:port" or "IP:port" ('' = connect directly)
+        'connect_via'     => '',
         // API token, encrypted with KeyVault ('' = not set)
         'api_token_enc'   => '',
         'verify_tls'      => '1',
@@ -73,10 +79,32 @@ final class Settings
         return $this->values[$name] ?? self::DEFAULTS[$name] ?? '';
     }
 
-    /** The JSON-RPC endpoint: <front-end>/api_jsonrpc.php, or '' when not set. */
+    /** The JSON-RPC endpoint: <front-end>[:port]/api_jsonrpc.php, or '' when not set. */
     public function apiUrl(): string
     {
-        return self::normaliseApiUrl($this->get('zabbix_url'));
+        $url = self::normaliseApiUrl($this->get('zabbix_url'));
+
+        return $url === '' ? '' : ConnectTarget::withPort($url, $this->port());
+    }
+
+    /** The optional Port setting (0 = not set). */
+    public function port(): int
+    {
+        $port = (int) $this->get('zabbix_port');
+
+        return $port >= 1 && $port <= 65535 ? $port : 0;
+    }
+
+    /** The optional Connect via address as "host:port", or ''. */
+    public function connectVia(): string
+    {
+        $url = $this->apiUrl();
+
+        try {
+            return $url === '' ? '' : ConnectTarget::normaliseConnectVia($this->get('connect_via'), ConnectTarget::port($url));
+        } catch (\InvalidArgumentException) {
+            return '';
+        }
     }
 
     public static function normaliseApiUrl(string $url): string
@@ -147,7 +175,8 @@ final class Settings
             max(1, min(30, $timeout, (int) $this->get('connect_timeout'))),
             $timeout,
             $this->get('verify_tls') !== '0',
-            trim($this->get('ca_bundle'))
+            trim($this->get('ca_bundle')),
+            ConnectTarget::connectToEntry($this->apiUrl(), $this->get('connect_via'))
         );
     }
 

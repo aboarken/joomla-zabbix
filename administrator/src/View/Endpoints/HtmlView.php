@@ -68,6 +68,7 @@ final class HtmlView extends BaseHtmlView
         $lines = [
             'com_zabbix Find Endpoints ' . gmdate('Y-m-d H:i', (int) $r['at']) . ' UTC',
             'API: ' . $r['url'],
+            'Connect via: ' . (($r['via'] ?? '') !== '' ? $r['via'] : 'direct'),
             'Zabbix version: ' . $r['version'] . ' (' . $r['ms'] . ' ms)',
             'Token user: ' . ($r['token']['ok'] ? $r['token']['username'] . ', type ' . $r['token']['type'] . ', role ' . ($r['token']['role'] ?: $r['token']['roleid']) : 'refused (' . $r['token']['error'] . ')'),
             '',
