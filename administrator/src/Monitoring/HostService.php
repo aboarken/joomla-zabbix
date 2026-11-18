@@ -73,7 +73,7 @@ final class HostService
                 continue;
             }
 
-            $hosts[] = self::summary($row, $hostGroups, $counts[(string) $row['hostid']] ?? array_fill(0, 6, 0));
+            $hosts[] = self::summary($row, $scope->namedGroups($hostGroups), $counts[(string) $row['hostid']] ?? array_fill(0, 6, 0));
         }
 
         return $hosts;
@@ -130,7 +130,7 @@ final class HostService
             $counts[$problem['severity']]++;
         }
 
-        $host = self::summary($row, $hostGroups, $counts);
+        $host = self::summary($row, $scope->namedGroups($hostGroups), $counts);
 
         $host['description'] = (string) ($row['description'] ?? '');
         $host['interfaces']  = array_values(array_map(static fn ($i): array => [

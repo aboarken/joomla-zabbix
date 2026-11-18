@@ -134,11 +134,14 @@ If you change the secret, the stored token can no longer be decrypted. Enter the
 
 ## Caching
 
-Zabbix answers are cached in the component's own table `#__zabbix_cache`. Widget and host data are
-kept for *Cache (minutes)*, 2 by default, and 0 means no cache between page loads. The user list,
-user rights and dashboard definitions are kept for 5 to 10 minutes. **Clear Cache** and saving the
-settings empty the cache. The cache is keyed per user, so one user never sees another user's
-cached data.
+The portal keeps a few slow-changing Zabbix answers in the component's own table
+`#__zabbix_cache`, for *Cache (minutes)* (5 by default; 0 = read on every page): the Zabbix user
+list, each user's rights, host group names and dashboard definitions. A change of rights or
+dashboard sharing in Zabbix therefore reaches the portal within that time, or at once with
+**Clear Cache**. Saving the settings also empties the cache.
+
+Live data (problems, item values, hosts, charts) is never cached: it is read from Zabbix on every
+page load and widget refresh.
 
 ## Security
 
@@ -151,7 +154,12 @@ cached data.
   default.
 - Rate limits apply to Test Connection and Find Endpoints. An audit log (`#__zabbix_audit`)
   records setting changes, mapping changes, tests and automatic matches.
-- Portal pages are sent with `no-store` and `noindex`.
+- Portal pages are sent with `no-store` and `noindex`. They work with a strict Content Security
+  Policy (no inline scripts that run, no inline styles).
+- Portal models check login and the page's permission themselves, as well as the controller.
+- Values that come from Zabbix (names, widget settings, colours) are escaped or validated before
+  they reach the page.
+- Audit log entries are kept for 365 days.
 - Log file: `administrator/logs/com_zabbix.php` (warnings and errors; notices too with *Detailed
   log* on).
 
@@ -165,6 +173,14 @@ cached data.
 - Value mappings are applied for *equals* rules only. Graph options such as stacking, axes,
   thresholds and overrides are not reproduced: graphs are simple line charts.
 - The portal is read-only: no acknowledging, closing or commenting on problems.
+- **Zabbix user role restrictions on the UI** (e.g. a role that hides *Monitoring → Hosts* or
+  dashboards) are not applied. Use the two Joomla permissions to decide who may open which page.
+- There is no rate limit on the portal's own data requests: each widget refresh is a few Zabbix
+  API calls made for a logged-in, permitted user.
+- **Personal data**: the cache table holds Zabbix usernames, names and e-mail addresses (from
+  user media), and the mapping table holds each mapped user's e-mail address. Mappings of deleted
+  Joomla users stay until removed under User Mappings. There is no Joomla privacy plugin for
+  export or removal requests.
 
 ## Development
 

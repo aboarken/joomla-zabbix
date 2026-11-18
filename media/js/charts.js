@@ -127,7 +127,7 @@
       cursor.setAttribute('visibility', 'visible');
       tip.replaceChildren(
         P.el('div', { class: 'zbx-tip__time', text: opts.formatter ? opts.formatter.dateTime(rows[0].p[0]) : '' }),
-        ...rows.map(({ s, p }) => P.el('div', {}, [P.el('span', { class: 'zbx-swatch', style: `background:${s.color}` }), `${s.name}: ${P.number(p[1], s.units)}`])),
+        ...rows.map(({ s, p }) => P.el('div', {}, [P.el('span', { class: 'zbx-swatch', style: { background: s.color } }), `${s.name}: ${P.number(p[1], s.units)}`])),
       );
       tip.hidden = false;
       const left = ((event.clientX - rect.left) / rect.width) * 100;
@@ -146,7 +146,7 @@
   };
 
   const legend = (entries) => P.el('ul', { class: 'zbx-legend' }, entries.map((e) => P.el('li', {}, [
-    P.el('span', { class: 'zbx-swatch', style: `background:${e.color}` }),
+    P.el('span', { class: 'zbx-swatch', style: { background: e.color } }),
     P.el('span', { class: 'zbx-legend__label', text: e.label }),
     e.value ? P.el('span', { class: 'zbx-legend__value', text: e.value }) : null,
   ])));

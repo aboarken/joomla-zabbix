@@ -4,7 +4,7 @@
         <message><![CDATA[COM_ZABBIX_MENU_DASHBOARD_DESC]]></message>
     </layout>
     <fields name="params">
-        <fieldset name="request" label="COM_ZABBIX_MENU_FIELDSET_DASHBOARD"
+        <fieldset name="basic" label="COM_ZABBIX_MENU_FIELDSET_DASHBOARD"
                   addfieldprefix="ZabbixPortal\Component\Zabbix\Administrator\Field">
             <field name="dashboard_id" type="zabbixdashboard" label="COM_ZABBIX_MENU_DASHBOARD_ID"
                    description="COM_ZABBIX_MENU_DASHBOARD_ID_DESC" default="" filter="integer">

@@ -34,7 +34,7 @@
 
       try {
         const url = `${cfg.endpoint}&host=${encodeURIComponent(cfg.host)}&item=${encodeURIComponent(itemId)}&period=${encodeURIComponent(period.value)}`;
-        const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+        const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token } });
         const json = await res.json();
 
         if (!res.ok || json.error) {

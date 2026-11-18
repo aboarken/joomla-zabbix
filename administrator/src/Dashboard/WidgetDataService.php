@@ -292,8 +292,12 @@ final class WidgetDataService
                 $graphs = $this->client->call('graph.get', $params);
 
                 foreach ((array) (\is_array($graphs) ? ($graphs[0]['gitems'] ?? []) : []) as $gitem) {
-                    $itemIds[]                         = (string) $gitem['itemid'];
-                    $colors[(string) $gitem['itemid']] = '#' . ltrim((string) ($gitem['color'] ?? ''), '#');
+                    $itemIds[] = (string) $gitem['itemid'];
+                    $colour    = self::colour((string) ($gitem['color'] ?? ''));
+
+                    if ($colour !== null) {
+                        $colors[(string) $gitem['itemid']] = $colour;
+                    }
                 }
             }
         }
@@ -440,6 +444,18 @@ final class WidgetDataService
     }
 
     /**
+     * A colour from a widget's settings as "#RRGGBB", or null when it is not a hex colour.
+     * Widget settings are written by Zabbix users; the value goes into style and SVG attributes
+     * in the browser, so nothing but a hex colour is passed on.
+     */
+    public static function colour(string $value): ?string
+    {
+        $value = ltrim(trim($value), '#');
+
+        return preg_match('/^[0-9A-Fa-f]{6}$/', $value) ? '#' . strtoupper($value) : null;
+    }
+
+    /**
      * The data sets of a Graph or Pie chart widget: item lists (ds.N.itemids.M) or host and item
      * name patterns (ds.N.hosts.M, ds.N.items.M, "*" as wildcard).
      *
@@ -462,8 +478,8 @@ final class WidgetDataService
                 foreach ($items as $i => $item) {
                     $colour = $fields->get($prefix . '.color.' . ($order[(string) $item['itemid']] ?? $i));
 
-                    if ($colour !== '') {
-                        $colors[$i] = '#' . ltrim($colour, '#');
+                    if (self::colour($colour) !== null) {
+                        $colors[$i] = self::colour($colour);
                     }
                 }
             } else {
@@ -473,8 +489,8 @@ final class WidgetDataService
             $set    = ['items' => $items, 'colors' => $colors];
             $colour = $fields->get($prefix . '.color');
 
-            if ($colour !== '') {
-                $set['color'] = '#' . ltrim($colour, '#');
+            if (self::colour($colour) !== null) {
+                $set['color'] = self::colour($colour);
             }
 
             $sets[] = $set;

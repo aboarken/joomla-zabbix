@@ -17,6 +17,11 @@ use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\Availability;
  */
 final class HostsModel extends PortalModel
 {
+    protected function permission(): string
+    {
+        return 'zabbix.hosts.view';
+    }
+
     public const STATUSES       = ['', 'enabled', 'disabled', 'maintenance'];
     public const AVAILABILITIES = ['', Availability::AVAILABLE, Availability::UNAVAILABLE, Availability::UNKNOWN, Availability::MIXED];
     public const PROBLEMS       = ['', 'with', 'without'];

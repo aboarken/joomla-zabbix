@@ -16,12 +16,11 @@ use ZabbixPortal\Component\Zabbix\Administrator\Identity\DirectoryUser;
 
 /**
  * Reads a Zabbix user's user groups (usergroup.get with selectHostGroupRights) and turns them
- * into an AccessScope. Kept in the shared cache for five minutes.
+ * into an AccessScope. Kept in the shared cache for the cache time of Integration Settings, so a
+ * change of rights in Zabbix reaches the portal within that time (or at once with Clear Cache).
  */
 final class AccessService
 {
-    private const TTL = 300;
-
     public function __construct(
         private readonly JsonRpcClient $client,
         private readonly CacheInterface $cache,
@@ -43,7 +42,7 @@ final class AccessService
             ]);
 
             return $this->resolver->resolve($user, \is_array($groups) ? array_values($groups) : [])->toArray();
-        }, self::TTL);
+        });
 
         return AccessScope::fromArray($data);
     }
@@ -66,7 +65,7 @@ final class AccessService
             }
 
             return $names;
-        }, self::TTL);
+        });
 
         return array_map('strval', $rows);
     }

@@ -166,7 +166,7 @@
         const body = el('div', { class: 'zbx-widget__body' });
         const node = el('section', {
           class: `zbx-widget zbx-widget--${w.type}${w.supported ? '' : ' zbx-widget--unsupported'}`,
-          style: `--x:${w.x};--y:${w.y};--w:${w.width};--h:${w.height}`,
+          style: { '--x': w.x, '--y': w.y, '--w': w.width, '--h': w.height },
           'aria-label': w.title,
         }, [w.hideHeader ? null : el('h2', { class: 'zbx-widget__title', text: w.title }), body]);
 
@@ -203,7 +203,7 @@
 
       try {
         const res = await fetch(`${cfg.endpoint}&dashboard=${encodeURIComponent(cfg.dashboard)}&widget=${encodeURIComponent(w.id)}${period}`, {
-          credentials: 'same-origin', headers: { Accept: 'application/json' },
+          credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token },
         });
         const json = await res.json().catch(() => ({ error: 'invalid' }));
         body.replaceChildren();

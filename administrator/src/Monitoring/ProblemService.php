@@ -133,10 +133,10 @@ final class ProblemService
                     static fn ($h): array => ['hostid' => (string) ($h['hostid'] ?? ''), 'name' => (string) ($h['name'] ?? '')],
                     (array) ($trigger['hosts'] ?? [])
                 )),
-                'groups'       => array_values(array_map(
+                'groups'       => $scope->namedGroups(array_values(array_map(
                     static fn ($g): array => ['groupid' => (string) ($g['groupid'] ?? ''), 'name' => (string) ($g['name'] ?? '')],
                     (array) ($trigger['hostgroups'] ?? [])
-                )),
+                ))),
             ];
 
             if (\count($rows) >= $limit) {

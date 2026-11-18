@@ -3,6 +3,26 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] - 2026-11-18
+
+Security and best-practice audit of the component.
+
+### Security
+- **Portal pages could be opened without their Joomla permission.** A logged-in user linked to a Zabbix user could open a portal page through the data controller's display task (`task=data.display&view=hosts`) without the *View Zabbix Hosts* or *View Zabbix Dashboard* permission. They saw only what their Zabbix user may see, but the Joomla permission was skipped. The data controller no longer shows pages, and every portal model now checks login and the page's permission itself.
+- **Names of host groups a user cannot read were shown** on hosts and problems when a visible host was also in such a group. Only readable host groups are named now (Super admins still see all).
+- **Widget colours are validated.** Colours set in Zabbix dashboards went into the page unchecked; anything but a hex colour is now replaced by the default palette.
+- The session token of the portal's data requests is sent in the `X-CSRF-Token` header instead of the URL, so it no longer appears in web server logs or the browser history.
+- Data requests answer unexpected errors with a plain JSON error (no HTML error page) and send `X-Content-Type-Options: nosniff`.
+- Host details read a host's items only after the host was checked against the user's rights.
+- Integration Settings and Find Endpoints warn when TLS certificate verification is switched off.
+
+### Changed
+- **Cache (minutes)** now does what it says: it is how long Zabbix users, their rights, host group names and dashboard definitions are kept (default 5, was a fixed 5 to 10 minutes whatever the setting). A change of rights in Zabbix reaches the portal within this time, or at once with Clear Cache. Problems, values and hosts are always read live.
+- The portal pages work with a strict Content Security Policy: no inline style attributes.
+- Audit log entries older than 365 days are deleted automatically.
+- The menu item options of Zabbix Dashboard are in the standard options fieldset.
+- Release workflow: GitHub Actions are pinned to commits, and the checkout keeps no credentials.
+
 ## [1.0.1] - 2026-11-18
 
 ### Added

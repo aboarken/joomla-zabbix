@@ -15,6 +15,11 @@ namespace ZabbixPortal\Component\Zabbix\Site\Model;
  */
 final class DashboardModel extends PortalModel
 {
+    protected function permission(): string
+    {
+        return 'zabbix.dashboard.view';
+    }
+
     /** @return list<array{id: string, name: string}> */
     public function dashboards(): array
     {

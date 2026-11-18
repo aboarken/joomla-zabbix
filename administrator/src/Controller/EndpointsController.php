@@ -43,8 +43,12 @@ final class EndpointsController extends BaseController
         }
 
         try {
-            $report = $this->component()->getEndpointProbe()->run()
-                + ['via' => $this->component()->getSettingsRepository()->load()->connectVia()];
+            $settings = $this->component()->getSettingsRepository()->load();
+            $report   = $this->component()->getEndpointProbe()->run() + ['via' => $settings->connectVia()];
+
+            if (!$settings->verifiesTls() && str_starts_with(strtolower((string) $report['url']), 'https://')) {
+                $report['warnings'][] = 'TLS_OFF';
+            }
             $this->app->setUserState(self::STATE_REPORT, $report);
             $audit->record($this->actorId(), 'endpoints.run', AuditLogInterface::RESULT_OK, 'Zabbix ' . $report['version'], $this->actorId());
             $this->app->enqueueMessage(

@@ -60,7 +60,7 @@ final class Settings
         'max_hosts'       => '2000',
         // System
         'detailed_log'    => '1',
-        'cache_minutes'   => '2',
+        'cache_minutes'   => '5',
         'date_format'     => 'd/m/Y',
         'time_format'     => 'H:i',
         'display_timezone' => '',
@@ -167,6 +167,11 @@ final class Settings
         }
     }
 
+    public function verifiesTls(): bool
+    {
+        return $this->get('verify_tls') !== '0';
+    }
+
     public function transportOptions(): TransportOptions
     {
         $timeout = max(1, min(120, (int) $this->get('timeout')));
@@ -209,7 +214,10 @@ final class Settings
         return $this->get('detailed_log') !== '0';
     }
 
-    /** Cache time in seconds; 0 = page load only. */
+    /**
+     * How long Zabbix users, their rights, host group names and dashboard definitions are kept,
+     * in seconds; 0 = for one page load only. Live data (problems, values, hosts) is never kept.
+     */
     public function cacheTtl(): int
     {
         return max(0, min(self::MAX_CACHE_MINUTES, (int) $this->get('cache_minutes'))) * 60;

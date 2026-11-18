@@ -27,10 +27,12 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Actions are pinned to a commit, so a moved tag cannot change what runs with write access.
       - name: Check out
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
+          persist-credentials: false
 
       - name: Read version from manifest
         id: version
@@ -81,7 +83,7 @@ jobs:
           python3 -I -c "import xml.etree.ElementTree as E, sys; v = E.parse('dist/changelog.xml').getroot()[0].findtext('version'); sys.exit(0 if v == '${{ steps.version.outputs.version }}' else 'changelog.xml starts with ' + str(v) + ', expected the manifest version')"
 
       - name: Keep package as workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: com_zabbix-${{ steps.version.outputs.version }}
           path: |
