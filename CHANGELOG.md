@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-11-19
+
+### Changed
+- **A count opens its list only when it is 1 or more**, in Host availability (*Not available*, *Mixed*, *Unknown*; in boxes and in the table) and Problems by severity (each severity). A count of 0 is not clickable; *Available* and *Total* never are. (1.3.3 made *Not available* clickable also at 0.)
+
 ## [1.3.3] - 2026-11-19
 
 ### Fixed

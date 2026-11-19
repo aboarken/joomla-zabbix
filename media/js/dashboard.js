@@ -88,13 +88,13 @@
      * A list in a dialog (what is behind a count), as Zabbix's pop-up: native <dialog>, closed
      * with Esc, the Close button or a click outside.
      */
-    const showList = (title, head, rows, total, emptyText = '') => {
+    const showList = (title, head, rows, total) => {
       const root = document.querySelector('[data-zbx-root]') || document.body;
       const close = el('button', { type: 'button', class: 'zbx-btn zbx-btn--ghost zbx-btn--sm', text: t('COM_ZABBIX_JS_CLOSE', 'Close') });
       const dialog = el('dialog', { class: 'zbx-dialog', 'aria-label': title }, [
         el('div', { class: 'zbx-dialog__head' }, [el('h2', { class: 'zbx-dialog__title', text: title }), close]),
         el('div', { class: 'zbx-dialog__body' }, [
-          rows.length ? table(head, rows) : (emptyText ? el('p', { class: 'zbx-empty zbx-ok', text: emptyText }) : empty()),
+          rows.length ? table(head, rows) : empty(),
           total > rows.length ? el('p', { class: 'zbx-muted zbx-small', text: `${t('COM_ZABBIX_JS_SHOWING_FIRST', 'Showing the first')} ${rows.length} / ${total}` }) : null,
         ]),
       ]);
@@ -118,10 +118,10 @@
 
     /**
      * Coloured count boxes (Problems by severity, Host availability), as in Zabbix. A box with
-     * something behind it is a button that lists it (b.open); b.always makes it a button also at 0.
+     * something behind it (a count of 1 or more) is a button that lists it (b.open); 0 is not.
      */
     const boxes = (items, vertical) => el('div', { class: `zbx-boxes${vertical ? ' zbx-boxes--vertical' : ''}` }, items.map((b) => {
-      const clickable = Boolean(b.open) && (Number(b.count) > 0 || Boolean(b.always));
+      const clickable = Boolean(b.open) && Number(b.count) > 0;
       const node = el(clickable ? 'button' : 'div', {
         class: `zbx-box${clickable ? ' zbx-box--button' : ''}`, type: clickable ? 'button' : null, style: { background: b.color, color: ink(b.color) },
         title: clickable ? `${b.label}: ${t('COM_ZABBIX_JS_SHOW_LIST', 'show the list')}` : null,
@@ -196,15 +196,14 @@
         const states = ['available', 'unavailable', 'mixed', 'unknown'];
         const label = (s) => t(AVAIL[s][0], AVAIL[s][1]);
 
-        // Clicking a count lists those hosts: Not available (the devices that are down, always
-        // clickable, also at 0), Mixed and Unknown. Available and Total are not lists to act on.
+        // Clicking a count of 1 or more lists those hosts: Not available (the devices that are
+        // down), Mixed and Unknown. Available and Total are not clickable.
         const lists = d.lists || {};
         const LISTED = ['unavailable', 'mixed', 'unknown'];
         const open = (key, state, count) => () => {
           const list = (lists[key] || {})[state] || [];
           const title = `${label(state)}${key !== 'total' && IFACE[key] ? ` – ${t(IFACE[key][0], IFACE[key][1])}` : ''} (${count})`;
-          showList(title, [t('COM_ZABBIX_JS_HOST', 'Host')], hostRows(list), count,
-            state === 'unavailable' ? t('COM_ZABBIX_JS_NONE_DOWN', 'No devices are down.') : '');
+          showList(title, [t('COM_ZABBIX_JS_HOST', 'Host')], hostRows(list), count);
         };
 
         if (d.boxes) {
@@ -216,7 +215,6 @@
               label: label(s),
               color: AVAIL[s][2],
               open: LISTED.includes(s) ? open(key, s, counts[s] || 0) : null,
-              always: s === 'unavailable',
             })),
             { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '' },
           ], d.vertical));
@@ -233,7 +231,7 @@
           t(IFACE[type] ? IFACE[type][0] : '', IFACE[type] ? IFACE[type][1] : type),
           ...states.map((s) => {
             const count = c[s] || 0;
-            const content = LISTED.includes(s) && (count > 0 || s === 'unavailable') ? countButton(type, s, count) : String(count);
+            const content = LISTED.includes(s) && count > 0 ? countButton(type, s, count) : String(count);
 
             return count
               ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, content)

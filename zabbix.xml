@@ -6,7 +6,7 @@
     <creationDate>2026-11</creationDate>
     <copyright>(C) 2026</copyright>
     <license>GNU General Public License version 2 or later</license>
-    <version>1.3.3</version>
+    <version>1.3.4</version>
     <description>COM_ZABBIX_XML_DESCRIPTION</description>
     <namespace path="src">ZabbixPortal\Component\Zabbix</namespace>
 
