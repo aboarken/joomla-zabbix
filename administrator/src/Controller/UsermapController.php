@@ -141,6 +141,7 @@ final class UsermapController extends BaseController
             $this->app->enqueueMessage(Text::sprintf(
                 'COM_ZABBIX_MAPPING_AUTOMATCH_DONE',
                 $counts['matched'],
+                $counts['pending'],
                 $counts['ambiguous'],
                 $counts['not_found'],
                 $counts['skipped']

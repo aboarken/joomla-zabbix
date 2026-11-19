@@ -14,7 +14,7 @@ read methods (`*.get`) only and never changes anything in Zabbix.
 | Menu | What it does |
 |---|---|
 | **Integration Settings** | The Zabbix address, an optional **Port** and **Connect via**, and the **API token**. The token is encrypted at rest (AES-256-GCM) and never shown again. Also: TLS verification and a custom CA bundle, timeouts, *Open in Zabbix* links, user-matching rules, dashboard refresh, cache, date/time format and time zone. **Test Connection** checks the Zabbix version and the token's user. **Clear Cache** empties the cache. |
-| **User Mappings** | Links each Joomla user to one Zabbix user. Users are matched **automatically** by username and/or e-mail (from the Zabbix user's media) on their first visit, or by **Auto-match All**. Mappings can also be set by hand. Actions: Confirm, Suspend, Rematch, Remove. A user's edit page shows **what that user will see**: role, readable and denied host groups, and dashboards. |
+| **User Mappings** | Links each Joomla user to one Zabbix user. Users are matched **automatically** by username and/or e-mail (from the Zabbix user's media) on their first visit, or by **Auto-match All**. Matches are approved automatically or **wait for your approval** (Integration Settings → *New users*); a notice counts the users waiting. Mappings can also be set by hand. Actions: Confirm (approve), Suspend, Rematch, Remove. A user's edit page shows **what that user will see**: role, readable and denied host groups, and dashboards. |
 | **Find Endpoints** | API discovery and diagnostics. It shows the server version and response time, the token's user, role and the role's API rules (warning if the role allows write methods), and each API method the portal uses with its result: *allowed*, *denied* or *error*. It also shows what the token can see (host groups, hosts, templates, users, dashboards, problems) and every dashboard with the widget types it uses, marking those the portal does not draw. Ends with a **Copy diagnostics** button (no secrets). |
 
 ### Site: two menu item types (Menus → Add New Menu Item → Zabbix)
@@ -50,7 +50,7 @@ portal applies each user's Zabbix rights itself, on every page and every widget:
 1. The Joomla user must be logged in and have the Joomla permission for the page
    (*View Zabbix Dashboard* / *View Zabbix Hosts*).
 2. The Joomla user must be linked to an **active** Zabbix user (User Mappings). Otherwise the user
-   sees a "not linked" page.
+   sees a "not linked" page, or a "waiting for approval" page (see *New users* below).
 3. That Zabbix user's rights are read from Zabbix (`usergroup.get` with host group rights):
    - **Super admin** role: everything the token sees.
    - Otherwise: hosts in host groups with **Read** or **Read-write** permission. A host that is
@@ -95,11 +95,35 @@ the damage if the token ever leaks.
 3. **Find Endpoints**: press *Find Endpoints*. Every required method should be *Allowed* and the
    token user a *Super admin*.
 4. **User Mappings**: press **Auto-match All**, then fix *Ambiguous* or *Not found* users by
-   editing them. Open a user to see exactly what they will see.
+   editing them. Open a user to see exactly what they will see. With *Wait for administrator
+   approval*, select the users *Waiting for approval* and click **Confirm**.
 5. **Options → Permissions**: set *View Zabbix Dashboard* and/or *View Zabbix Hosts* to *Allowed*
    for the groups that should use the portal (e.g. *Registered*). Nothing is allowed by default.
 6. **Menus**: add menu items of type **Zabbix → Zabbix Dashboard** and **Zabbix → Zabbix Hosts**.
    Give them the access level *Registered*, so only logged-in users see them in the menu.
+
+### New users: approve automatically or wait for approval
+
+*Integration Settings → User mappings → New users* decides what happens when a Joomla user is
+matched to a Zabbix user automatically (on their first visit, or with **Auto-match All** or
+**Rematch**):
+
+- **Approve automatically** (default): the match works at once.
+- **Wait for administrator approval**: the match is stored as *Waiting for approval*. The user
+  sees a page saying their account is waiting, and nothing from Zabbix, until you approve it:
+  **User Mappings** shows how many users are waiting, with a link to them; select them and click
+  **Confirm**. Open a user first to see what they will be able to see.
+
+Choose *Wait for administrator approval* where users can set their own Joomla username or e-mail,
+since someone could enter a colleague's before that colleague's first visit. While a user is
+waiting:
+
+- if their Joomla e-mail changes, the waiting match is suspended;
+- no Zabbix calls are made for them;
+- if you switch back to *Approve automatically*, they are matched again and approved on their
+  next visit.
+
+Mappings you make or confirm yourself are never held.
 
 ### Port and Connect via (Zabbix hosted locally)
 

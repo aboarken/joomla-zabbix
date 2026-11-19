@@ -16,11 +16,13 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Identity;
 final class UserMapping
 {
     public const STATUS_ACTIVE    = 'active';
+    /** Found automatically, waiting for an administrator to confirm it (User Mappings → Confirm). */
+    public const STATUS_PENDING   = 'pending';
     public const STATUS_AMBIGUOUS = 'ambiguous';
     public const STATUS_NOT_FOUND = 'not_found';
     public const STATUS_SUSPENDED = 'suspended';
 
-    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_AMBIGUOUS, self::STATUS_NOT_FOUND, self::STATUS_SUSPENDED];
+    public const STATUSES = [self::STATUS_ACTIVE, self::STATUS_PENDING, self::STATUS_AMBIGUOUS, self::STATUS_NOT_FOUND, self::STATUS_SUSPENDED];
 
     public const SOURCE_AUTO  = 'auto';
     public const SOURCE_ADMIN = 'admin';
@@ -54,8 +56,8 @@ final class UserMapping
             throw new \InvalidArgumentException('Invalid Zabbix username');
         }
 
-        if ($status === self::STATUS_ACTIVE && ($zabbixUserId === null || $zabbixUsername === null)) {
-            throw new \InvalidArgumentException('An active mapping needs a Zabbix user');
+        if (\in_array($status, [self::STATUS_ACTIVE, self::STATUS_PENDING], true) && ($zabbixUserId === null || $zabbixUsername === null)) {
+            throw new \InvalidArgumentException('An active or pending mapping needs a Zabbix user');
         }
     }
 

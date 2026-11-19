@@ -54,6 +54,8 @@ final class Settings
         'show_links'      => '1',
         // User mappings
         'auto_match'      => '1',
+        // New users: 1 = a match works at once, 0 = it waits for an administrator (User Mappings → Confirm)
+        'auto_approve'    => '1',
         'match_mode'      => 'username_email',
         // Portal
         'refresh_seconds' => '60',
@@ -188,6 +190,12 @@ final class Settings
     public function autoMatch(): bool
     {
         return $this->get('auto_match') !== '0';
+    }
+
+    /** New users: approve automatic matches at once (true) or wait for an administrator (false). */
+    public function autoApprove(): bool
+    {
+        return $this->get('auto_approve') !== '0';
     }
 
     public function matchMode(): string

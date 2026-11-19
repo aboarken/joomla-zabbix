@@ -135,7 +135,8 @@ final class SettingsValidator
         $values['timeout']         = (string) ($total ?? 20);
 
         // User mappings.
-        $values['auto_match'] = self::flag($input['auto_match'] ?? '1') ? '1' : '0';
+        $values['auto_match']   = self::flag($input['auto_match'] ?? '1') ? '1' : '0';
+        $values['auto_approve'] = self::flag($input['auto_approve'] ?? '1') ? '1' : '0';
         $mode                 = self::str($input['match_mode'] ?? '');
         $values['match_mode'] = \in_array($mode, Settings::MATCH_MODES, true) ? $mode : 'username_email';
 

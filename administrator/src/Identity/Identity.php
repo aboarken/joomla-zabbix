@@ -27,7 +27,7 @@ final class Identity
         return $this->mapping !== null && $this->mapping->isActive() && $this->zabbixUser !== null;
     }
 
-    /** Status shown on the "not linked" page: active, suspended, ambiguous, not_found or none. */
+    /** Status shown on the "not linked" page: active, pending, suspended, ambiguous, not_found or none. */
     public function status(): string
     {
         return $this->mapping?->status ?? 'none';

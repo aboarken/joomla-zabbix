@@ -1,0 +1,1 @@
+-- 1.1.0: no database changes (the new status 'pending' fits the status column; the setting is a row of #__zabbix_settings).

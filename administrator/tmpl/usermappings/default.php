@@ -17,6 +17,7 @@ $this->getDocument()->getWebAssetManager()->useScript('multiselect');
 
 $badge = [
     'active'    => 'bg-success',
+    'pending'   => 'bg-info text-dark',
     'suspended' => 'bg-danger',
     'not_found' => 'bg-secondary',
     'ambiguous' => 'bg-warning text-dark',
@@ -27,6 +28,13 @@ $date = static fn (?string $v): string => $v ? HTMLHelper::_('date', $v, Text::_
     <p class="small text-muted"><?php echo Text::_('COM_ZABBIX_MAPPINGS_HELP'); ?></p>
 
     <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
+
+    <?php if ($this->pending > 0) : ?>
+        <div class="alert alert-info">
+            <?php echo $this->escape(Text::plural('COM_ZABBIX_MAPPINGS_PENDING_NOTICE', $this->pending)); ?>
+            <a class="alert-link" href="<?php echo Route::_('index.php?option=com_zabbix&view=usermappings&filter[status]=pending'); ?>"><?php echo Text::_('COM_ZABBIX_MAPPINGS_PENDING_SHOW'); ?></a>
+        </div>
+    <?php endif; ?>
 
     <?php if ($this->items === []) : ?>
         <div class="alert alert-info"><?php echo Text::_('JGLOBAL_NO_MATCHING_RESULTS'); ?></div>

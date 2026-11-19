@@ -35,6 +35,20 @@ final class UsermappingsModel extends ListModel
         parent::populateState($ordering, $direction);
     }
 
+    /** Users found automatically and waiting for an administrator to confirm them. */
+    public function countPending(): int
+    {
+        $db     = $this->getDatabase();
+        $status = UserMapping::STATUS_PENDING;
+        $query  = $db->createQuery()
+            ->select('COUNT(*)')
+            ->from($db->quoteName('#__zabbix_usermap'))
+            ->where($db->quoteName('status') . ' = :status')
+            ->bind(':status', $status);
+
+        return (int) $db->setQuery($query)->loadResult();
+    }
+
     protected function getStoreId($id = '')
     {
         $id .= ':' . $this->getState('filter.search') . ':' . $this->getState('filter.status') . ':' . $this->getState('filter.source');

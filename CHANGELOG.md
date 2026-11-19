@@ -3,6 +3,13 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-11-19
+
+### Added
+- **Integration Settings → User mappings → New users**: *Approve automatically* (default, as before) or *Wait for administrator approval*, as in the ServiceDesk Plus component. With *Wait for administrator approval*, a user matched automatically (first visit, Auto-match All or Rematch) is stored as **Waiting for approval** and sees a waiting page, with nothing from Zabbix, until an administrator selects them in User Mappings and clicks **Confirm**.
+- **User Mappings**: a notice with the number of users waiting for approval and a link to them, the status filter *Waiting for approval*, and the waiting count in the Auto-match All result.
+- A waiting user whose Joomla e-mail changes is suspended. Waiting users are matched again, and approved, on their next visit once the setting is back to *Approve automatically*. Each step is written to the audit log.
+
 ## [1.0.2] - 2026-11-18
 
 Security and best-practice audit of the component.

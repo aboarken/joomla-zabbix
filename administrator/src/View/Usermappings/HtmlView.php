@@ -32,6 +32,9 @@ final class HtmlView extends BaseHtmlView
     /** @var array<string, mixed> */
     public array $activeFilters = [];
 
+    /** Users waiting for approval. */
+    public int $pending = 0;
+
     public function display($tpl = null): void
     {
         /** @var UsermappingsModel $model */
@@ -42,6 +45,7 @@ final class HtmlView extends BaseHtmlView
         $this->state         = $model->getState();
         $this->filterForm    = $model->getFilterForm() ?: null;
         $this->activeFilters = $model->getActiveFilters();
+        $this->pending       = $model->countPending();
 
         $this->addToolbar();
 

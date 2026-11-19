@@ -138,7 +138,9 @@ return new class () implements ServiceProviderInterface {
                 $c->get(AuditLogInterface::class),
                 $c->get(JoomlaLogger::class),
                 $c->get(SettingsRepository::class)->load()->autoMatch(),
-                $c->get(SettingsRepository::class)->load()->matchMode()
+                $c->get(SettingsRepository::class)->load()->matchMode(),
+                null,
+                $c->get(SettingsRepository::class)->load()->autoApprove()
             )
         );
 
@@ -148,7 +150,9 @@ return new class () implements ServiceProviderInterface {
                 $c->get(UserMapRepositoryInterface::class),
                 $directory($c),
                 $c->get(AuditLogInterface::class),
-                $c->get(SettingsRepository::class)->load()->matchMode()
+                $c->get(SettingsRepository::class)->load()->matchMode(),
+                null,
+                $c->get(SettingsRepository::class)->load()->autoApprove()
             )
         );
 

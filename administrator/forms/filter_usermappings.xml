@@ -6,6 +6,7 @@
         <field name="status" type="list" label="COM_ZABBIX_MAPPING_STATUS" onchange="this.form.submit();" validate="options">
             <option value="">COM_ZABBIX_MAPPINGS_SELECT_STATUS</option>
             <option value="active">COM_ZABBIX_MAPSTATUS_ACTIVE</option>
+            <option value="pending">COM_ZABBIX_MAPSTATUS_PENDING</option>
             <option value="ambiguous">COM_ZABBIX_MAPSTATUS_AMBIGUOUS</option>
             <option value="not_found">COM_ZABBIX_MAPSTATUS_NOT_FOUND</option>
             <option value="suspended">COM_ZABBIX_MAPSTATUS_SUSPENDED</option>
