@@ -1,4 +1,4 @@
-# Joomla Zabbix
+# Joomla Zabbix (com_zabbix)
 
 `com_zabbix` is a Joomla 6 component that brings **Zabbix 7.4** into your Joomla site through the
 Zabbix JSON-RPC API. Users log in to Joomla and see Zabbix **dashboards** and **hosts**, drawn by
