@@ -76,10 +76,55 @@
 
     const today = (unix) => P.format(unix, 'Y-m-d', cfg.format.zone) === P.format(Math.floor(Date.now() / 1000), 'Y-m-d', cfg.format.zone);
 
-    /** Coloured count boxes (Problems by severity, Host availability), as in Zabbix. */
-    const boxes = (items, vertical) => el('div', { class: `zbx-boxes${vertical ? ' zbx-boxes--vertical' : ''}` }, items.map((b) => el('div', {
-      class: 'zbx-box', style: { background: b.color, color: ink(b.color) },
-    }, [el('span', { class: 'zbx-box__n', text: b.count }), el('span', { class: 'zbx-box__l', text: b.label })])));
+    /**
+     * A list in a dialog (what is behind a count), as Zabbix's pop-up: native <dialog>, closed
+     * with Esc, the Close button or a click outside.
+     */
+    const showList = (title, head, rows, total) => {
+      const root = document.querySelector('[data-zbx-root]') || document.body;
+      const close = el('button', { type: 'button', class: 'zbx-btn zbx-btn--ghost zbx-btn--sm', text: t('COM_ZABBIX_JS_CLOSE', 'Close') });
+      const dialog = el('dialog', { class: 'zbx-dialog', 'aria-label': title }, [
+        el('div', { class: 'zbx-dialog__head' }, [el('h2', { class: 'zbx-dialog__title', text: title }), close]),
+        el('div', { class: 'zbx-dialog__body' }, [
+          rows.length ? table(head, rows) : empty(),
+          total > rows.length ? el('p', { class: 'zbx-muted zbx-small', text: `${t('COM_ZABBIX_JS_SHOWING_FIRST', 'Showing the first')} ${rows.length} / ${total}` }) : null,
+        ]),
+      ]);
+      close.addEventListener('click', () => dialog.close());
+      dialog.addEventListener('click', (event) => { if (event.target === dialog) { dialog.close(); } });
+      dialog.addEventListener('close', () => dialog.remove());
+      root.append(dialog);
+      dialog.showModal();
+      close.focus();
+    };
+
+    const problemRows = (list) => list.map((r) => [
+      el('span', { class: 'zbx-nowrap', text: today(r.clock) ? fmt.time(r.clock) : fmt.dateTime(r.clock) }),
+      el('span', {}, r.hosts.flatMap((h, i) => (i ? [', ', hostLink(h.hostid, h.name)] : [hostLink(h.hostid, h.name)]))),
+      r.name,
+      el('span', { class: 'zbx-nowrap', text: P.duration(r.duration) }),
+      r.ack ? t('COM_ZABBIX_JS_YES', 'Yes') : t('COM_ZABBIX_JS_NO', 'No'),
+    ]);
+    const problemHead = () => [t('COM_ZABBIX_JS_TIME', 'Time'), t('COM_ZABBIX_JS_HOST', 'Host'), t('COM_ZABBIX_JS_PROBLEM', 'Problem'), t('COM_ZABBIX_JS_DURATION', 'Duration'), t('COM_ZABBIX_JS_ACK', 'Ack')];
+    const hostRows = (list) => list.map((h) => [hostLink(h.hostid, h.name)]);
+
+    /**
+     * Coloured count boxes (Problems by severity, Host availability), as in Zabbix. A box with
+     * something behind it is a button that lists it (b.open).
+     */
+    const boxes = (items, vertical) => el('div', { class: `zbx-boxes${vertical ? ' zbx-boxes--vertical' : ''}` }, items.map((b) => {
+      const clickable = b.open && Number(b.count) > 0;
+      const node = el(clickable ? 'button' : 'div', {
+        class: `zbx-box${clickable ? ' zbx-box--button' : ''}`, type: clickable ? 'button' : null, style: { background: b.color, color: ink(b.color) },
+        title: clickable ? `${b.label}: ${t('COM_ZABBIX_JS_SHOW_LIST', 'show the list')}` : null,
+      }, [el('span', { class: 'zbx-box__n', text: b.count }), el('span', { class: 'zbx-box__l', text: b.label })]);
+
+      if (clickable) {
+        node.addEventListener('click', b.open);
+      }
+
+      return node;
+    }));
 
     /** A horizontal bar (Top hosts "Bar" and "Indicators"), with threshold colours. */
     const bar = (b) => {
@@ -125,7 +170,13 @@
       severity(body, d) {
         const sevs = d.severities.slice().sort((a, b) => b - a);
         // Every severity in its colour, zero or not, as Zabbix.
-        body.append(boxes(sevs.map((s) => ({ count: d.totals[s], label: P.severityName(s), color: SEV[s] })), d.vertical));
+        body.append(boxes(sevs.map((s) => ({
+          count: d.totals[s],
+          label: P.severityName(s),
+          color: SEV[s],
+          // Clicking a severity lists its problems and their hosts.
+          open: () => showList(`${P.severityName(s)} (${d.totals[s]})`, problemHead(), problemRows((d.lists || {})[s] || []), d.totals[s]),
+        })), d.vertical));
         if (d.showGroups && d.groups.length) {
           body.append(table([t('COM_ZABBIX_JS_HOSTGROUP', 'Host group'), ...sevs.map((s) => P.severityName(s))], d.groups.map((g) => [
             g.name, ...sevs.map((s) => (g.counts[s] ? el('span', { class: `zbx-sev zbx-sev-${s}`, text: g.counts[s] }) : '')),
@@ -137,18 +188,35 @@
         const states = ['available', 'unavailable', 'mixed', 'unknown'];
         const label = (s) => t(AVAIL[s][0], AVAIL[s][1]);
 
+        // Clicking a count lists those hosts (e.g. Not available: the devices that are down).
+        const lists = d.lists || {};
+        const open = (key, state, count) => () => {
+          const list = state === 'total'
+            ? states.flatMap((s) => (lists[key] || {})[s] || [])
+            : ((lists[key] || {})[state] || []);
+          const title = `${state === 'total' ? t('COM_ZABBIX_JS_TOTAL', 'Total') : label(state)}${key !== 'total' && IFACE[key] ? ` – ${t(IFACE[key][0], IFACE[key][1])}` : ''} (${count})`;
+          showList(title, [t('COM_ZABBIX_JS_HOST', 'Host')], hostRows(list), count);
+        };
+
         if (d.boxes) {
+          const key = d.single || 'total';
           const counts = d.single ? d.types[d.single] : d.totals;
           body.append(boxes([
-            ...states.map((s) => ({ count: counts[s] || 0, label: label(s), color: AVAIL[s][2] })),
-            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '' },
+            ...states.map((s) => ({ count: counts[s] || 0, label: label(s), color: AVAIL[s][2], open: open(key, s, counts[s] || 0) })),
+            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '', open: open(key, 'total', counts.total || 0) },
           ], d.vertical));
           return;
         }
 
+        const countButton = (key, state, count) => {
+          const button = el('button', { type: 'button', class: 'zbx-count-link', text: String(count) });
+          button.addEventListener('click', open(key, state, count));
+          return button;
+        };
+
         body.append(table(['', ...states.map(label), t('COM_ZABBIX_JS_TOTAL', 'Total')], Object.entries(d.types).map(([type, c]) => [
           t(IFACE[type] ? IFACE[type][0] : '', IFACE[type] ? IFACE[type][1] : type),
-          ...states.map((s) => (c[s] ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, String(c[s])) : el('td', { class: 'zbx-num' }, '0'))),
+          ...states.map((s) => (c[s] ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, countButton(type, s, c[s])) : el('td', { class: 'zbx-num' }, '0'))),
           el('td', { class: 'zbx-num' }, String(c.total)),
         ])));
       },

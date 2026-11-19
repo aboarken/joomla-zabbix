@@ -195,6 +195,26 @@ final class WidgetFidelityTest extends TestCase
         self::assertSame('', WidgetDataService::clock(new WidgetFields([['name' => 'tzone_timezone', 'value' => 'Mars/Base']]))['timezone']);
     }
 
+    public function testCountsComeWithTheirLists(): void
+    {
+        $avail = $this->data('hostavail', ['interface_type.0' => 1]);
+        self::assertSame([['hostid' => '3', 'name' => 'hv1']], $avail['lists']['agent']['unavailable'], 'Not available: the hosts that are down');
+        self::assertSame('bak5', $avail['lists']['agent']['mixed'][0]['name']);
+        self::assertCount(1, $avail['lists']['total']['available']);
+
+        $rows = [
+            ['severity' => 4, 'clock' => 10, 'duration' => 5, 'name' => 'Unavailable by ICMP ping', 'hosts' => [['hostid' => '3', 'name' => 'hv1']], 'acknowledged' => false],
+            ['severity' => 2, 'clock' => 9, 'duration' => 6, 'name' => 'Link down', 'hosts' => [['hostid' => '1', 'name' => 'bak3']], 'acknowledged' => true],
+        ];
+        $lists = WidgetDataService::listsBySeverity($rows);
+        self::assertSame('hv1', $lists[4][0]['hosts'][0]['name'], 'High: the devices with high problems');
+        self::assertTrue($lists[2][0]['ack']);
+        self::assertArrayNotHasKey(5, $lists);
+
+        $many = array_fill(0, 150, $rows[0]);
+        self::assertCount(WidgetDataService::LIST_MAX, WidgetDataService::listsBySeverity($many)[4], 'Lists are capped');
+    }
+
     public function testThresholdColour(): void
     {
         $t = [['threshold' => 0.0, 'color' => '#00FF00'], ['threshold' => 80.0, 'color' => '#FF0000']];

@@ -22,7 +22,7 @@ $h = $this->host;
     <?php else : ?>
         <div class="zbx-head">
             <div>
-                <h1><?php echo $this->escape($h['name']); ?></h1>
+                <h1 class="h2"><?php echo $this->escape($h['name']); ?></h1>
                 <p class="zbx-head-meta">
                     <?php if ($h['host'] !== $h['name']) : ?><span><?php echo $this->escape($h['host']); ?></span><?php endif; ?>
                     <span class="zbx-pill zbx-avail-<?php echo $h['availability']; ?>"><?php echo Text::_('COM_ZABBIX_AVAIL_' . strtoupper($h['availability'])); ?></span>

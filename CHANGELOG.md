@@ -3,6 +3,18 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-11-19
+
+### Added
+- **Click a count to see what is behind it.** In *Problems by severity*, clicking a severity (e.g. *High*) lists its problems with their devices, time, duration and acknowledgement. In *Host availability*, clicking a count (e.g. *Not available*) lists those devices. The list opens in a dialog (Esc or Close to close); devices link to their host page.
+
+### Changed
+- **Page titles** are the size of the ServiceDesk Plus and ZKBioTime portals' (`<h1 class="h2">`, 2rem on wide screens), whatever size the template gives `h1`.
+- **Dashboard toolbar in one row**: Refresh, Dashboard, Period (and Open in Zabbix), each at its own width, also with templates that make selects 100% wide; it wraps on phones.
+
+### Fixed
+- **Scrolling in widgets**: a table's header row now stays at the very top while its rows scroll; before, rows showed above the header (e.g. in System information). Thinner scrollbars inside widgets.
+
 ## [1.3.0] - 2026-11-19
 
 ### Changed
