@@ -33,7 +33,7 @@ $h = $this->host;
             <?php if ($this->zabbixLink !== '') : ?>
                 <div class="zbx-toolbar">
                     <a class="zbx-btn zbx-btn--ghost" href="<?php echo $this->escape($this->zabbixLink); ?>" target="_blank" rel="noopener noreferrer">
-                        <?php echo Text::_('COM_ZABBIX_OPEN_IN_ZABBIX'); ?> <span class="icon-out-2" aria-hidden="true"></span>
+                        <?php echo Text::_('COM_ZABBIX_OPEN_IN_ZABBIX'); ?> <?php echo $this->icon('external'); ?>
                     </a>
                 </div>
             <?php endif; ?>
@@ -138,11 +138,11 @@ $h = $this->host;
                     <strong data-zbx-chart-title></strong>
                     <div class="zbx-toolbar">
                         <label class="visually-hidden" for="zbx-host-period"><?php echo Text::_('COM_ZABBIX_PERIOD'); ?></label>
-                        <select id="zbx-host-period" class="zbx-select" data-zbx-host-period>
+                        <span class="zbx-select-wrap"><select id="zbx-host-period" class="zbx-select" data-zbx-host-period>
                             <?php foreach ($this->config['periods'] as $p) : ?>
                                 <option value="<?php echo $p; ?>"><?php echo Text::_('COM_ZABBIX_PERIOD_' . strtoupper($p)); ?></option>
                             <?php endforeach; ?>
-                        </select>
+                        </select></span>
                         <button type="button" class="zbx-btn zbx-btn--ghost zbx-btn--sm" data-zbx-chart-close><?php echo Text::_('JCLOSE'); ?></button>
                     </div>
                 </div>

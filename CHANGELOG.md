@@ -6,6 +6,8 @@ Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioni
 ## [1.3.4] - 2026-11-19
 
 ### Changed
+- **Refresh button: text centred.** Its icon came from Joomla's icon font, which Helix Ultimate does not load, so an empty icon pushed the text to the right. The component now draws its own icons (Refresh, Open in Zabbix) as small inline images in the text colour.
+- **Drop-downs: the arrow sits a little in from the right edge**, and the text keeps clear of it, on the Dashboard, Hosts and host pages, whatever arrow or padding the template gives selects.
 - **A count opens its list only when it is 1 or more**, in Host availability (*Not available*, *Mixed*, *Unknown*; in boxes and in the table) and Problems by severity (each severity). A count of 0 is not clickable; *Available* and *Total* never are. (1.3.3 made *Not available* clickable also at 0.)
 
 ## [1.3.3] - 2026-11-19

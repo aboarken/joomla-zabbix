@@ -29,33 +29,33 @@ $layout = $this->layout;
             <div class="zbx-toolbar">
                 <?php // In one row, as asked: Refresh, Dashboard, Period (then Open in Zabbix). ?>
                 <button type="button" class="zbx-btn zbx-btn--ghost" data-zbx-refresh>
-                    <span class="icon-refresh" aria-hidden="true"></span> <?php echo Text::_('COM_ZABBIX_REFRESH'); ?>
+                    <?php echo $this->icon('refresh'); ?> <?php echo Text::_('COM_ZABBIX_REFRESH'); ?>
                 </button>
 
                 <?php if ($this->allowChoose && \count($this->dashboards) > 1) : ?>
                     <form method="get" action="<?php echo Route::_('index.php?option=com_zabbix&view=dashboard'); ?>" class="zbx-inline-form">
                         <?php echo $this->formHidden('dashboard'); ?>
                         <label class="visually-hidden" for="zbx-dashboard"><?php echo Text::_('COM_ZABBIX_DASHBOARD_CHOOSE'); ?></label>
-                        <select id="zbx-dashboard" name="dashboard" class="zbx-select" data-zbx-autosubmit>
+                        <span class="zbx-select-wrap"><select id="zbx-dashboard" name="dashboard" class="zbx-select" data-zbx-autosubmit>
                             <?php foreach ($this->dashboards as $d) : ?>
                                 <option value="<?php echo (int) $d['id']; ?>"<?php echo $d['id'] === $this->currentId ? ' selected' : ''; ?>><?php echo $this->escape($d['name']); ?></option>
                             <?php endforeach; ?>
-                        </select>
+                        </select></span>
                         <noscript><button type="submit" class="zbx-btn zbx-btn--ghost"><?php echo Text::_('JSUBMIT'); ?></button></noscript>
                     </form>
                 <?php endif; ?>
 
                 <label class="visually-hidden" for="zbx-period"><?php echo Text::_('COM_ZABBIX_PERIOD'); ?></label>
-                <select id="zbx-period" class="zbx-select" data-zbx-period>
+                <span class="zbx-select-wrap"><select id="zbx-period" class="zbx-select" data-zbx-period>
                     <option value=""><?php echo Text::_('COM_ZABBIX_PERIOD_WIDGET'); ?></option>
                     <?php foreach ($this->config['periods'] as $p) : ?>
                         <option value="<?php echo $p; ?>"><?php echo Text::_('COM_ZABBIX_PERIOD_' . strtoupper($p)); ?></option>
                     <?php endforeach; ?>
-                </select>
+                </select></span>
 
                 <?php if ($this->zabbixLink !== '') : ?>
                     <a class="zbx-btn zbx-btn--ghost" href="<?php echo $this->escape($this->zabbixLink); ?>" target="_blank" rel="noopener noreferrer">
-                        <?php echo Text::_('COM_ZABBIX_OPEN_IN_ZABBIX'); ?> <span class="icon-out-2" aria-hidden="true"></span>
+                        <?php echo Text::_('COM_ZABBIX_OPEN_IN_ZABBIX'); ?> <?php echo $this->icon('external'); ?>
                     </a>
                 <?php endif; ?>
             </div>

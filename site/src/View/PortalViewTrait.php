@@ -127,6 +127,23 @@ trait PortalViewTrait
         return $html;
     }
 
+    /**
+     * A small icon as inline SVG in the text colour. The component draws its own icons: Joomla's
+     * icon font (icon-refresh, icon-out-2) is not loaded by every template (e.g. Helix Ultimate),
+     * and an empty icon pushed the button text off centre.
+     */
+    public function icon(string $name): string
+    {
+        $paths = [
+            'refresh'  => '<path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/>',
+            'external' => '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+        ];
+
+        return '<svg class="zbx-icon zbx-icon--' . htmlspecialchars($name, ENT_QUOTES, 'UTF-8') . '" viewBox="0 0 24 24" width="16" height="16"'
+            . ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+            . ' aria-hidden="true" focusable="false">' . ($paths[$name] ?? '') . '</svg>';
+    }
+
     public function url(string $query): string
     {
         return Route::_('index.php?option=com_zabbix&' . $query);
