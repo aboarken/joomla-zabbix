@@ -21,10 +21,6 @@ use ZabbixPortal\Component\Zabbix\Site\Model\PortalModel;
  *  - heading and browser title from the menu item (title, Page Heading, Browser Page Title,
  *    Show Page Heading), as in Joomla core;
  *  - noindex/nofollow, the portal stylesheet and scripts, and the texts the scripts use.
- *
- * The pages use the site template's Bootstrap 5 classes (cards, tables, forms, buttons, badges);
- * the component loads no Bootstrap or jQuery of its own, only a small stylesheet for what
- * Bootstrap has no class for (the dashboard grid, Zabbix's severity colours, charts).
  */
 trait PortalViewTrait
 {
@@ -33,17 +29,6 @@ trait PortalViewTrait
     public bool $showPageHeading = true;
 
     public Formatter $f;
-
-    /** Bootstrap badge class of an availability state. */
-    public function availabilityClass(string $state): string
-    {
-        return match ($state) {
-            'available'   => 'text-bg-success',
-            'unavailable' => 'text-bg-danger',
-            'mixed'       => 'text-bg-warning',
-            default       => 'text-bg-secondary',
-        };
-    }
 
     /** Severity names (0-5), translated. */
     public static function severityName(int $severity): string
@@ -95,6 +80,8 @@ trait PortalViewTrait
             'COM_ZABBIX_JS_UNAVAILABLE', 'COM_ZABBIX_JS_UNKNOWN', 'COM_ZABBIX_JS_MIXED', 'COM_ZABBIX_JS_MAINTENANCE',
             'COM_ZABBIX_JS_MORE', 'COM_ZABBIX_JS_UPDATED', 'COM_ZABBIX_JS_ERROR_NOT_LINKED', 'COM_ZABBIX_JS_ERROR_LOGIN',
             'COM_ZABBIX_JS_NONE', 'COM_ZABBIX_JS_AGENT', 'COM_ZABBIX_JS_SNMP', 'COM_ZABBIX_JS_IPMI', 'COM_ZABBIX_JS_JMX',
+            'COM_ZABBIX_JS_AGENT_ACTIVE', 'COM_ZABBIX_JS_TAGS', 'COM_ZABBIX_JS_SI_PARAMETER', 'COM_ZABBIX_JS_SI_VERSION',
+            'COM_ZABBIX_JS_SI_HOSTS', 'COM_ZABBIX_JS_SI_TEMPLATES', 'COM_ZABBIX_JS_SI_ITEMS', 'COM_ZABBIX_JS_SI_TRIGGERS', 'COM_ZABBIX_JS_SI_USERS',
         ] as $key) {
             Text::script($key);
         }

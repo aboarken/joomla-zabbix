@@ -90,8 +90,7 @@ final class DashboardLayout
         foreach ($layout['pages'] as &$page) {
             foreach ($page['widgets'] as &$widget) {
                 if ($widget['type'] === 'clock') {
-                    $fields          = new WidgetFields($widget['fields']);
-                    $widget['clock'] = ['digital' => $fields->int('clock_type') === 1];
+                    $widget['clock'] = WidgetDataService::clock(new WidgetFields($widget['fields']));
                 }
 
                 unset($widget['fields']);

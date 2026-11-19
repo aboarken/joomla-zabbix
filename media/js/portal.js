@@ -83,39 +83,68 @@
     };
   };
 
+  /** The 3 largest units, as Zabbix's convertUnitsS(): "1h 38m 51s", "21d 3h 42m". */
   const duration = (seconds) => {
-    let s = Math.max(0, Math.round(seconds));
+    let s = Math.floor(Math.max(0, seconds));
     const out = [];
+    let first = null;
 
-    [['d', 86400], ['h', 3600], ['m', 60]].forEach(([unit, len]) => {
-      if (out.length < 2 && s >= len) {
-        out.push(`${Math.floor(s / len)}${unit}`);
-        s %= len;
+    [['y', 31536000], ['M', 2592000], ['d', 86400], ['h', 3600], ['m', 60], ['s', 1]].some(([unit, len], level) => {
+      const count = Math.floor(s / len);
+
+      if (count > 0) {
+        out.push(`${count}${unit}`);
+        s -= count * len;
+        first = first === null ? level : first;
       }
+
+      return first !== null && level - first >= 2;
     });
 
-    if (out.length < 2 && (out.length === 0 || s > 0)) {
-      out.push(`${s}s`);
-    }
-
-    return out.slice(0, 2).join(' ');
+    return out.length ? out.join(' ') : '0';
   };
 
-  /** Number with units as Zabbix shows it (K/M/G; 1024 for B and Bps). */
+  /** "64 days, 01:54:51", as Zabbix's convertUnitsUptime(). */
+  const uptime = (seconds) => {
+    const s = Math.max(0, Math.round(seconds));
+    const days = Math.floor(s / 86400);
+    const rest = s - days * 86400;
+    const pad = (n) => String(n).padStart(2, '0');
+    const time = `${pad(Math.floor(rest / 3600))}:${pad(Math.floor((rest % 3600) / 60))}:${pad(rest % 60)}`;
+
+    return days ? `${days} ${days === 1 ? 'day' : 'days'}, ${time}` : time;
+  };
+
+  /**
+   * Number with units as Zabbix shows it (convertUnits()): units after a space, K/M/G (1024 for
+   * B and Bps), no prefix for %, ms, rpm and units starting with "!" (not shown).
+   */
   const number = (value, units = '') => {
     if (value === null || value === undefined || Number.isNaN(value)) {
       return '';
     }
 
-    if (units === 's' || units === 'uptime') {
+    if (units === 's') {
       return duration(value);
     }
 
-    if (units === '%' || units === '' || units === 'ms' || units === 'rpm') {
-      return `${trim(value)}${units === '%' ? '%' : (units ? ` ${units}` : '')}`;
+    if (units === 'uptime') {
+      return uptime(value);
     }
 
-    const base = units === 'B' || units === 'Bps' ? 1024 : 1000;
+    let unit = units || '';
+    const noPrefix = ['%', 'ms', 'rpm', 'RPM'];
+
+    if (unit.startsWith('!')) {
+      unit = unit.slice(1);
+      noPrefix.push(unit);
+    }
+
+    if (unit === '' || noPrefix.includes(unit) || Math.abs(value) < 1) {
+      return unit ? `${trim(value)} ${unit}` : trim(value);
+    }
+
+    const base = unit === 'B' || unit === 'Bps' ? 1024 : 1000;
     const prefixes = ['', 'K', 'M', 'G', 'T', 'P'];
     let v = value;
     let i = 0;
@@ -125,7 +154,7 @@
       i += 1;
     }
 
-    return `${trim(v)} ${prefixes[i]}${units}`;
+    return `${trim(v)} ${prefixes[i]}${unit}`;
   };
 
   const trim = (v) => {
@@ -136,7 +165,7 @@
 
   const severityName = (s) => t(`COM_ZABBIX_SEVERITY_${s}`, ['Not classified', 'Information', 'Warning', 'Average', 'High', 'Disaster'][s]);
 
-  window.ZabbixPortal = { t, el, format, makeFormatter, duration, number, severityName };
+  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName };
 
   // Filters that apply as soon as an option is chosen.
   document.addEventListener('change', (event) => {

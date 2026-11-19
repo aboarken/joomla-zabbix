@@ -30,7 +30,7 @@
         return;
       }
 
-      body.replaceChildren(P.el('p', { class: 'text-body-secondary mb-0', text: P.t('COM_ZABBIX_JS_LOADING', 'Loading…') }));
+      body.replaceChildren(P.el('p', { class: 'zbx-loading', text: P.t('COM_ZABBIX_JS_LOADING', 'Loading…') }));
 
       try {
         const url = `${cfg.endpoint}&host=${encodeURIComponent(cfg.host)}&item=${encodeURIComponent(itemId)}&period=${encodeURIComponent(period.value)}`;
@@ -43,7 +43,7 @@
 
         C.line(body, json.data.series, { formatter: fmt });
       } catch (e) {
-        body.replaceChildren(P.el('p', { class: 'text-danger mb-0', role: 'alert', text: P.t('COM_ZABBIX_JS_ERROR', 'The data could not be loaded.') }));
+        body.replaceChildren(P.el('p', { class: 'zbx-error-text', role: 'alert', text: P.t('COM_ZABBIX_JS_ERROR', 'The data could not be loaded.') }));
       }
     };
 
