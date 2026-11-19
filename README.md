@@ -21,7 +21,7 @@ read methods (`*.get`) only and never changes anything in Zabbix.
 
 | Menu item type | What the user sees |
 |---|---|
-| **Zabbix Dashboard** | A Zabbix dashboard drawn in Joomla on Zabbix's own grid (72 columns, 70 px rows; stacked on phones), with live data. It has page tabs, a period selector, auto-refresh and an *Open in Zabbix* link. Menu options: a fixed dashboard (or the first the user may see), whether users may switch between the dashboards shared with them, the refresh interval and the page width. |
+| **Zabbix Dashboard** | A Zabbix dashboard drawn in Joomla on Zabbix's own grid (72 columns, 70 px rows; stacked on phones), with live data. It has page tabs, a period selector, auto-refresh and an *Open in Zabbix* link. Menu options: a fixed dashboard (or the first the user may see), whether users may switch between the dashboards shared with them, and the refresh interval. |
 | **Zabbix Hosts** | Summary cards (hosts, available, not available, with problems, in maintenance). Filters: search, host group, status, availability and problems. A table with groups, availability per interface type (ZBX/SNMP/IPMI/JMX) and problem counts per severity. Each host opens a **details page** with interfaces, groups, tags, templates, inventory, current problems and latest data. Every numeric item has a **chart** for 1 h to 30 days. |
 
 ### Dashboard widgets drawn by the portal
@@ -126,24 +126,26 @@ waiting:
 
 Mappings you make or confirm yourself are never held.
 
-### Look and page width (Helix Ultimate and other templates)
+### Look and full-width pages (Helix Ultimate and other templates)
 
 The portal pages use the site template's **Bootstrap 5** classes (cards, tables, forms, buttons,
 badges, alerts, tabs), so they look like the rest of the site. The component loads no Bootstrap
 and no jQuery of its own; its small stylesheet only adds the dashboard grid, Zabbix's severity
 colours and the charts. Templates without Bootstrap 5 show the pages unstyled.
 
-To show a dashboard over the **whole page width**, either:
+To show the portal over the **whole page width** in Helix Ultimate:
 
-- **In Helix Ultimate (recommended)**: *System → Site Template Styles → your Helix style →
-  Duplicate*, open the copy (e.g. *Helix - Full width*) → *Template Options → Layout*. In the row
-  that holds the component (the *Main Body* section), open its settings (gear icon) and switch on
-  **Full Width** (called *Fluid* in some Helix versions). Make sure no module position is published next to it on that
-  page. Save. Then open the Zabbix Dashboard menu item and choose that copy under **Template
-  Style**. Only that page changes.
-- **Or in the menu item**: *Page width → Full width*. The portal then spreads over the whole
-  browser width whatever the template's container. Use it on pages without side module
-  positions. Host details opened from a Zabbix Hosts menu item follow that menu item's setting.
+1. *System → Site Template Styles*: duplicate your Helix style and open the copy (e.g. *Helix -
+   Full width*).
+2. *Template Options → Layout*: open the settings of the **section** (row) that holds the
+   component, usually *Main Body* (its own settings icon, not the column's), and switch on
+   **Full Width** (called *Fluid* in some Helix versions). Make sure no module column sits next to
+   the component there. Save.
+3. Open the Zabbix Dashboard (and Zabbix Hosts) menu item and choose that style under **Template
+   Style**. Only those pages change.
+
+Setting the component column to 12 is not enough: the row itself stays in Helix's fixed-width
+container until the section is full width.
 
 ### Port and Connect via (Zabbix hosted locally)
 

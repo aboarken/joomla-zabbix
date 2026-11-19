@@ -3,12 +3,4 @@
     <layout title="COM_ZABBIX_MENU_HOSTS">
         <message><![CDATA[COM_ZABBIX_MENU_HOSTS_DESC]]></message>
     </layout>
-    <fields name="params">
-        <fieldset name="basic" label="COM_ZABBIX_MENU_FIELDSET_HOSTS">
-            <field name="page_width" type="list" label="COM_ZABBIX_MENU_PAGE_WIDTH" description="COM_ZABBIX_MENU_PAGE_WIDTH_DESC" default="" validate="options">
-                <option value="">COM_ZABBIX_MENU_PAGE_WIDTH_TEMPLATE</option>
-                <option value="full">COM_ZABBIX_MENU_PAGE_WIDTH_FULL</option>
-            </field>
-        </fieldset>
-    </fields>
 </metadata>

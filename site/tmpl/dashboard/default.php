@@ -13,7 +13,7 @@ use Joomla\CMS\Router\Route;
 
 $layout = $this->layout;
 ?>
-<div class="com-zabbix zbx-portal<?php echo $this->fullWidth ? ' zbx-full-width' : ''; ?>" data-zbx-root>
+<div class="com-zabbix zbx-portal" data-zbx-root>
     <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
         <div>
             <?php if ($this->showPageHeading) : ?>

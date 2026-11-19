@@ -20,8 +20,7 @@ use ZabbixPortal\Component\Zabbix\Site\Model\PortalModel;
  * Shared by the portal views:
  *  - heading and browser title from the menu item (title, Page Heading, Browser Page Title,
  *    Show Page Heading), as in Joomla core;
- *  - noindex/nofollow, the portal stylesheet and scripts, and the texts the scripts use;
- *  - the menu item's Page width option.
+ *  - noindex/nofollow, the portal stylesheet and scripts, and the texts the scripts use.
  *
  * The pages use the site template's Bootstrap 5 classes (cards, tables, forms, buttons, badges);
  * the component loads no Bootstrap or jQuery of its own, only a small stylesheet for what
@@ -34,9 +33,6 @@ trait PortalViewTrait
     public bool $showPageHeading = true;
 
     public Formatter $f;
-
-    /** Menu item option Page width: Full width (the page uses the whole browser width). */
-    public bool $fullWidth = false;
 
     /** Bootstrap badge class of an availability state. */
     public function availabilityClass(string $state): string
@@ -60,11 +56,6 @@ trait PortalViewTrait
         $heading = $title = Text::_($titleKey);
         $show    = true;
         $item    = Factory::getApplication()->getMenu()->getActive();
-
-        // Page width applies to the menu item's own page and to pages opened from it (host details).
-        if ($item !== null && ($item->query['option'] ?? '') === 'com_zabbix') {
-            $this->fullWidth = (string) $item->getParams()->get('page_width', '') === 'full';
-        }
 
         if ($item !== null && ($item->query['option'] ?? '') === 'com_zabbix' && ($item->query['view'] ?? '') === $view) {
             $params    = $item->getParams();

@@ -12,7 +12,7 @@ use Joomla\CMS\Language\Text;
 
 $h = $this->host;
 ?>
-<div class="com-zabbix zbx-portal<?php echo $this->fullWidth ? ' zbx-full-width' : ''; ?>" data-zbx-root>
+<div class="com-zabbix zbx-portal" data-zbx-root>
     <p class="mb-3"><a href="<?php echo $this->backUrl; ?>"><span aria-hidden="true">←</span> <?php echo Text::_('COM_ZABBIX_HOST_BACK'); ?></a></p>
 
     <?php if ($this->error !== null) : ?>

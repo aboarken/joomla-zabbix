@@ -25,7 +25,7 @@ $cardUrl = function (array $set) use ($f): string {
     return Route::_('index.php?option=com_zabbix&view=hosts' . ($query ? '&' . http_build_query($query) : ''));
 };
 ?>
-<div class="com-zabbix zbx-portal<?php echo $this->fullWidth ? ' zbx-full-width' : ''; ?>" data-zbx-root>
+<div class="com-zabbix zbx-portal" data-zbx-root>
     <?php if ($this->showPageHeading) : ?>
         <h1 class="mb-4"><?php echo $this->escape($this->pageHeading); ?></h1>
     <?php endif; ?>
