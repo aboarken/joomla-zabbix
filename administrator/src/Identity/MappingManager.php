@@ -28,7 +28,8 @@ final class MappingManager
         private readonly \Closure $directory,
         private readonly AuditLogInterface $audit,
         private readonly string $matchMode = 'username_email',
-        ?\Closure $clock = null
+        ?\Closure $clock = null,
+        private readonly bool $autoApprove = true
     ) {
         $this->clock = $clock ?? static fn (): \DateTimeImmutable => new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
@@ -77,7 +78,8 @@ final class MappingManager
     }
 
     /**
-     * Make the stored Zabbix user active again (after a suspension), as an administrator's choice.
+     * Make the stored Zabbix user active, as an administrator's choice: approves a user waiting
+     * for approval, or lifts a suspension.
      *
      * @throws MappingException
      */
@@ -103,38 +105,42 @@ final class MappingManager
     }
 
     /**
-     * Match again by username / e-mail; the result becomes an automatic mapping.
+     * Match again by username / e-mail; the result becomes an automatic mapping. With "Wait for
+     * administrator approval" a match is stored as pending, to be confirmed.
      *
-     * @return string UserMatcher::MATCHED, AMBIGUOUS or NOT_FOUND
+     * @return string UserMatcher::MATCHED, AMBIGUOUS or NOT_FOUND, or 'pending'
      */
     public function rematch(int $joomlaUserId, string $username, string $email, int $actorId): string
     {
         [$result, $user] = (new UserMatcher())->match($username, $email, $this->directory()->all(), $this->matchMode);
         $now             = ($this->clock)();
+        $pending         = $result === UserMatcher::MATCHED && !$this->autoApprove;
 
         $this->repository->save(new UserMapping(
             $joomlaUserId,
             $user?->userid,
             $user?->username,
             UserMatcher::normaliseEmail($email),
-            match ($result) {
-                UserMatcher::MATCHED   => UserMapping::STATUS_ACTIVE,
-                UserMatcher::AMBIGUOUS => UserMapping::STATUS_AMBIGUOUS,
-                default                => UserMapping::STATUS_NOT_FOUND,
+            match (true) {
+                $pending                           => UserMapping::STATUS_PENDING,
+                $result === UserMatcher::MATCHED   => UserMapping::STATUS_ACTIVE,
+                $result === UserMatcher::AMBIGUOUS => UserMapping::STATUS_AMBIGUOUS,
+                default                            => UserMapping::STATUS_NOT_FOUND,
             },
             UserMapping::SOURCE_AUTO,
-            $user !== null ? $now : null,
+            $user !== null && !$pending ? $now : null,
             $now,
             $actorId
         ));
-        $this->audit->record($joomlaUserId, 'mapping.rematch', AuditLogInterface::RESULT_OK, $result, $actorId);
+        $this->audit->record($joomlaUserId, 'mapping.rematch', AuditLogInterface::RESULT_OK, $pending ? 'pending' : $result, $actorId);
 
-        return $result;
+        return $pending ? UserMapping::STATUS_PENDING : $result;
     }
 
     /**
      * Match every given Joomla user that has no mapping, or an automatic one that is not active.
-     * Administrators' mappings and active mappings are left alone.
+     * Administrators' mappings, active mappings and users already waiting for approval are left
+     * alone.
      *
      * @param  iterable<array{id: int, username: string, email: string}>  $users
      *
@@ -142,12 +148,12 @@ final class MappingManager
      */
     public function autoMatchAll(iterable $users, int $actorId): array
     {
-        $counts = [UserMatcher::MATCHED => 0, UserMatcher::AMBIGUOUS => 0, UserMatcher::NOT_FOUND => 0, 'skipped' => 0];
+        $counts = [UserMatcher::MATCHED => 0, UserMapping::STATUS_PENDING => 0, UserMatcher::AMBIGUOUS => 0, UserMatcher::NOT_FOUND => 0, 'skipped' => 0];
 
         foreach ($users as $user) {
             $mapping = $this->repository->find($user['id']);
 
-            if ($mapping !== null && ($mapping->isActive() || $mapping->source === UserMapping::SOURCE_ADMIN)) {
+            if ($mapping !== null && ($mapping->isActive() || $mapping->status === UserMapping::STATUS_PENDING || $mapping->source === UserMapping::SOURCE_ADMIN)) {
                 $counts['skipped']++;
 
                 continue;

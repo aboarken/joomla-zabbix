@@ -145,7 +145,7 @@ final class IdentityTest extends TestCase
             ['id' => 13, 'username' => 'nobody', 'email' => 'nobody@example.org'],
         ], 99);
 
-        self::assertSame(['matched' => 1, 'ambiguous' => 1, 'not_found' => 1, 'skipped' => 1], $counts);
+        self::assertSame(['matched' => 1, 'pending' => 0, 'ambiguous' => 1, 'not_found' => 1, 'skipped' => 1], $counts);
         self::assertSame('bob', $this->repo->rows[11]->zabbixUsername);
     }
 

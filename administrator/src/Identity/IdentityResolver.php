@@ -21,6 +21,11 @@ use ZabbixPortal\Component\Zabbix\Administrator\Audit\AuditLogInterface;
  * - Without a usable mapping, and with automatic matching on, the user is matched by username
  *   and/or e-mail (UserMatcher) and the result is stored; a failed match is tried again after
  *   RETRY_MINUTES. Mappings an administrator made are never replaced automatically.
+ * - New users (Integration Settings → New users): with "Approve automatically" a match works at
+ *   once. With "Wait for administrator approval" it is stored as "pending": the user sees nothing
+ *   until an administrator confirms it in User Mappings. A pending user whose Joomla e-mail has
+ *   changed since is suspended. Pending users are matched again, and approved, on their next
+ *   visit once the setting is back to "Approve automatically".
  */
 final class IdentityResolver
 {
@@ -39,7 +44,8 @@ final class IdentityResolver
         private readonly LoggerInterface $logger,
         private readonly bool $autoMatch = true,
         private readonly string $matchMode = 'username_email',
-        ?\Closure $clock = null
+        ?\Closure $clock = null,
+        private readonly bool $autoApprove = true
     ) {
         $this->clock = $clock ?? static fn (): \DateTimeImmutable => new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
@@ -53,6 +59,27 @@ final class IdentityResolver
 
         if ($mapping !== null && $mapping->status === UserMapping::STATUS_SUSPENDED) {
             return new Identity($joomlaUserId, $mapping);
+        }
+
+        // Found automatically, waiting for an administrator.
+        if ($mapping !== null && $mapping->status === UserMapping::STATUS_PENDING) {
+            // Joomla users can change their own e-mail without proving it; a pending match made
+            // with the old address is not kept for the new one.
+            if ($mapping->email !== UserMatcher::normaliseEmail($email)) {
+                $mapping = $mapping->with(['status' => UserMapping::STATUS_SUSPENDED, 'checkedAt' => ($this->clock)()]);
+                $this->repository->save($mapping);
+                $this->audit->record($joomlaUserId, 'identity.suspended', AuditLogInterface::RESULT_OK, 'joomla_email_changed');
+
+                return new Identity($joomlaUserId, $mapping);
+            }
+
+            // Still waiting: no Zabbix call until an administrator confirms it, or the setting
+            // is back to "Approve automatically" (then it is matched again below).
+            if (!$this->autoApprove || !$this->autoMatch) {
+                return new Identity($joomlaUserId, $mapping);
+            }
+
+            $mapping = null;
         }
 
         if ($mapping !== null && $mapping->isActive()) {
@@ -80,26 +107,29 @@ final class IdentityResolver
         }
 
         [$result, $user] = (new UserMatcher())->match($username, $email, $this->directory()->all(), $this->matchMode);
+        $pending         = $result === UserMatcher::MATCHED && !$this->autoApprove;
 
         $mapping = new UserMapping(
             $joomlaUserId,
             $user?->userid,
             $user?->username,
             UserMatcher::normaliseEmail($email),
-            match ($result) {
-                UserMatcher::MATCHED   => UserMapping::STATUS_ACTIVE,
-                UserMatcher::AMBIGUOUS => UserMapping::STATUS_AMBIGUOUS,
-                default                => UserMapping::STATUS_NOT_FOUND,
+            match (true) {
+                $pending                            => UserMapping::STATUS_PENDING,
+                $result === UserMatcher::MATCHED    => UserMapping::STATUS_ACTIVE,
+                $result === UserMatcher::AMBIGUOUS  => UserMapping::STATUS_AMBIGUOUS,
+                default                             => UserMapping::STATUS_NOT_FOUND,
             },
             UserMapping::SOURCE_AUTO,
-            $user !== null ? $now : null,
+            $user !== null && !$pending ? $now : null,
             $now
         );
 
         $this->repository->save($mapping);
-        $this->audit->record($joomlaUserId, 'identity.match', AuditLogInterface::RESULT_OK, $result);
+        $this->audit->record($joomlaUserId, $pending ? 'identity.pending' : 'identity.match', AuditLogInterface::RESULT_OK, $result . ($user !== null ? ' zabbix_user:' . $user->userid : ''));
 
-        return new Identity($joomlaUserId, $mapping, $user);
+        // A pending user is not linked yet: no Zabbix user until an administrator confirms it.
+        return new Identity($joomlaUserId, $mapping, $pending ? null : $user);
     }
 
     private function directory(): UserDirectoryInterface
