@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-11-19
+
+### Changed
+- The extension is called **Zabbix** in Joomla's update list (System → Update → Extensions), in the update server's name and in the installer messages (was *Zabbix Portal*).
+
 ## [1.3.1] - 2026-11-19
 
 ### Added
