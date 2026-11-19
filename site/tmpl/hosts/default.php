@@ -55,36 +55,36 @@ $cardUrl = function (array $set) use ($f): string {
             </div>
             <div class="zbx-filter">
                 <label for="zbx-group"><?php echo Text::_('COM_ZABBIX_HOSTS_GROUP'); ?></label>
-                <select id="zbx-group" name="group" class="zbx-select" data-zbx-autosubmit>
+                <span class="zbx-select-wrap"><select id="zbx-group" name="group" class="zbx-select" data-zbx-autosubmit>
                     <option value=""><?php echo Text::_('COM_ZABBIX_HOSTS_ALL_GROUPS'); ?></option>
                     <?php foreach ($this->groups as $id => $name) : ?>
                         <option value="<?php echo (int) $id; ?>"<?php echo (string) $id === $f['group'] ? ' selected' : ''; ?>><?php echo $this->escape($name); ?></option>
                     <?php endforeach; ?>
-                </select>
+                </select></span>
             </div>
             <div class="zbx-filter">
                 <label for="zbx-status"><?php echo Text::_('COM_ZABBIX_HOSTS_STATUS'); ?></label>
-                <select id="zbx-status" name="status" class="zbx-select" data-zbx-autosubmit>
+                <span class="zbx-select-wrap"><select id="zbx-status" name="status" class="zbx-select" data-zbx-autosubmit>
                     <?php foreach (['' => 'COM_ZABBIX_HOSTS_ANY', 'enabled' => 'COM_ZABBIX_HOSTS_ENABLED', 'disabled' => 'COM_ZABBIX_HOSTS_DISABLED', 'maintenance' => 'COM_ZABBIX_HOSTS_IN_MAINTENANCE'] as $v => $k) : ?>
                         <option value="<?php echo $v; ?>"<?php echo $v === $f['status'] ? ' selected' : ''; ?>><?php echo Text::_($k); ?></option>
                     <?php endforeach; ?>
-                </select>
+                </select></span>
             </div>
             <div class="zbx-filter">
                 <label for="zbx-availability"><?php echo Text::_('COM_ZABBIX_HOSTS_AVAILABILITY'); ?></label>
-                <select id="zbx-availability" name="availability" class="zbx-select" data-zbx-autosubmit>
+                <span class="zbx-select-wrap"><select id="zbx-availability" name="availability" class="zbx-select" data-zbx-autosubmit>
                     <?php foreach (['' => 'COM_ZABBIX_HOSTS_ANY', 'available' => 'COM_ZABBIX_AVAIL_AVAILABLE', 'unavailable' => 'COM_ZABBIX_AVAIL_UNAVAILABLE', 'mixed' => 'COM_ZABBIX_AVAIL_MIXED', 'unknown' => 'COM_ZABBIX_AVAIL_UNKNOWN'] as $v => $k) : ?>
                         <option value="<?php echo $v; ?>"<?php echo $v === $f['availability'] ? ' selected' : ''; ?>><?php echo Text::_($k); ?></option>
                     <?php endforeach; ?>
-                </select>
+                </select></span>
             </div>
             <div class="zbx-filter">
                 <label for="zbx-problems"><?php echo Text::_('COM_ZABBIX_HOSTS_PROBLEMS'); ?></label>
-                <select id="zbx-problems" name="problems" class="zbx-select" data-zbx-autosubmit>
+                <span class="zbx-select-wrap"><select id="zbx-problems" name="problems" class="zbx-select" data-zbx-autosubmit>
                     <?php foreach (['' => 'COM_ZABBIX_HOSTS_ANY', 'with' => 'COM_ZABBIX_HOSTS_WITH_PROBLEMS', 'without' => 'COM_ZABBIX_HOSTS_WITHOUT_PROBLEMS'] as $v => $k) : ?>
                         <option value="<?php echo $v; ?>"<?php echo $v === $f['problems'] ? ' selected' : ''; ?>><?php echo Text::_($k); ?></option>
                     <?php endforeach; ?>
-                </select>
+                </select></span>
             </div>
             <div class="zbx-filter zbx-filter--actions">
                 <button type="submit" class="zbx-btn"><?php echo Text::_('COM_ZABBIX_HOSTS_APPLY'); ?></button>
