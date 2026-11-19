@@ -128,10 +128,19 @@ Mappings you make or confirm yourself are never held.
 
 ### Look and full-width pages (Helix Ultimate and other templates)
 
-The portal pages use the site template's **Bootstrap 5** classes (cards, tables, forms, buttons,
-badges, alerts, tabs), so they look like the rest of the site. The component loads no Bootstrap
-and no jQuery of its own; its small stylesheet only adds the dashboard grid, Zabbix's severity
-colours and the charts. Templates without Bootstrap 5 show the pages unstyled.
+The portal pages have their own design, the same as the ServiceDesk Plus and ZKBioTime portals
+(cards, panels, tables, pills), so they look the same on any template and any Bootstrap version.
+Fonts and link colours come from the template. The component loads no Bootstrap and no jQuery.
+The pages keep a little space on the left and right, also in a full-width template row.
+
+Dashboard widgets are drawn as Zabbix 7.4 draws them, with each widget's own settings: Top hosts
+bars and indicators with threshold colours and decimal places, Item value positions, sizes,
+colours, thresholds and sparkline, Gauge thresholds, labels and needle, Clock time zone and
+parts, coloured count boxes, and values formatted as in Zabbix (*58.19 %*, *42.00 °C*,
+*64 days, 01:54:51*, *1h 38m 51s*, *available (1.00)*). Symptom problems are left out unless a
+Problems widget shows them, as in Zabbix. *System information* shows what the API can tell
+(frontend version and the numbers of hosts, templates, items, triggers and users); whether the
+Zabbix server is running and its version are not available through the API.
 
 To show the portal over the **whole page width** in Helix Ultimate:
 

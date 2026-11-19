@@ -22,8 +22,28 @@ final class Availability
     public const MIXED       = 'mixed';
     public const NONE        = 'none';
 
-    /** Interface types. */
-    public const TYPES = [1 => 'agent', 2 => 'snmp', 3 => 'ipmi', 4 => 'jmx'];
+    /** Interface types (5 = Zabbix agent active checks, the host's active_available). */
+    public const TYPES = [1 => 'agent', 2 => 'snmp', 3 => 'ipmi', 4 => 'jmx', 5 => 'agent_active'];
+
+    /**
+     * State of one interface type of a host, as Zabbix's Host availability widget counts it:
+     * available or not available when all its interfaces are, mixed when some are, else unknown.
+     *
+     * @param list<int> $states  availability of each interface of that type (0, 1, 2)
+     */
+    public static function typeState(array $states): string
+    {
+        $up   = \in_array(1, $states, true);
+        $down = \in_array(2, $states, true);
+
+        return match (true) {
+            $up && $down => self::MIXED,
+            $down        => self::UNAVAILABLE,
+            $up && !\in_array(0, $states, true) => self::AVAILABLE,
+            $up          => self::MIXED,
+            default      => self::UNKNOWN,
+        };
+    }
 
     /**
      * @param list<array<string, mixed>> $interfaces

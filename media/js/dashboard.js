@@ -36,43 +36,96 @@
       ? el('a', { href: `${cfg.zabbix}/zabbix.php?action=dashboard.view&dashboardid=${encodeURIComponent(cfg.dashboard)}`, target: '_blank', rel: 'noopener noreferrer', text: t('COM_ZABBIX_JS_OPEN_IN_ZABBIX', 'Open in Zabbix') })
       : null);
 
-    // Bootstrap colours of availability states (badges and backgrounds of the site template).
-    const AVAIL_BADGE = { available: 'text-bg-success', unavailable: 'text-bg-danger', unknown: 'text-bg-secondary', mixed: 'text-bg-warning' };
-    const AVAIL_DOT = { available: 'bg-success', unavailable: 'bg-danger', unknown: 'bg-secondary', mixed: 'bg-warning', none: 'bg-secondary' };
-    const AVAIL_BG = { available: 'bg-success-subtle', unavailable: 'bg-danger-subtle', unknown: 'bg-body-tertiary', mixed: 'bg-warning-subtle', none: 'bg-body-tertiary' };
-
     const sevBadge = (s) => el('span', { class: `zbx-sev zbx-sev-${s}`, text: P.severityName(s) });
 
-    const table = (head, rows) => el('div', { class: 'table-responsive' }, el('table', { class: 'table table-sm table-hover align-middle mb-0' }, [
-      el('thead', {}, el('tr', {}, head.map((h) => el('th', { scope: 'col', text: h })))),
-      el('tbody', {}, rows.map((cells) => el('tr', {}, cells.map((c) => el('td', {}, c))))),
+    const table = (head, rows) => el('div', { class: 'zbx-table-wrap' }, el('table', { class: 'zbx-table zbx-table--compact' }, [
+      el('thead', {}, el('tr', {}, head.map((h) => (h && h.nodeType ? h : el('th', { scope: 'col', text: h }))))),
+      el('tbody', {}, rows.map((cells) => el('tr', {}, cells.map((c) => (c && c.nodeType && c.tagName === 'TD' ? c : el('td', {}, c)))))),
     ]));
 
-    const empty = () => el('p', { class: 'text-body-secondary mb-0', text: t('COM_ZABBIX_JS_NO_DATA', 'No data') });
+    const empty = () => el('p', { class: 'zbx-empty', text: t('COM_ZABBIX_JS_NO_DATA', 'No data') });
+
+    // Zabbix's severity colours, for backgrounds drawn from data.
+    const SEV = ['#97AAB3', '#7499FF', '#FFC859', '#FFA059', '#E97659', '#E45959'];
+    const AVAIL = {
+      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#59DB8F'],
+      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#E45959'],
+      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#FFA059'],
+      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#97AAB3'],
+    };
+    const IFACE = {
+      agent_active: ['COM_ZABBIX_JS_AGENT_ACTIVE', 'Zabbix agent (active checks)'],
+      agent: ['COM_ZABBIX_JS_AGENT', 'Zabbix agent (passive checks)'],
+      snmp: ['COM_ZABBIX_JS_SNMP', 'SNMP'],
+      jmx: ['COM_ZABBIX_JS_JMX', 'JMX'],
+      ipmi: ['COM_ZABBIX_JS_IPMI', 'IPMI'],
+    };
+
+    /** Text colour that stays readable on a background colour. */
+    const ink = (hex) => {
+      const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+
+      if (!m) {
+        return '';
+      }
+
+      const n = parseInt(m[1], 16);
+
+      return ((n >> 16) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000 > 150 ? '#1f2937' : '#ffffff';
+    };
+
+    const today = (unix) => P.format(unix, 'Y-m-d', cfg.format.zone) === P.format(Math.floor(Date.now() / 1000), 'Y-m-d', cfg.format.zone);
+
+    /** Coloured count boxes (Problems by severity, Host availability), as in Zabbix. */
+    const boxes = (items, vertical) => el('div', { class: `zbx-boxes${vertical ? ' zbx-boxes--vertical' : ''}` }, items.map((b) => el('div', {
+      class: 'zbx-box', style: { background: b.color, color: ink(b.color) },
+    }, [el('span', { class: 'zbx-box__n', text: b.count }), el('span', { class: 'zbx-box__l', text: b.label })])));
+
+    /** A horizontal bar (Top hosts "Bar" and "Indicators"), with threshold colours. */
+    const bar = (b) => {
+      const ratio = Math.max(0, Math.min(1, (b.value - b.min) / (b.max - b.min)));
+      const node = el('span', { class: `zbx-bar${b.indicators ? ' zbx-bar--indicators' : ''}`, role: 'img', 'aria-label': String(b.value) });
+
+      if (b.indicators) {
+        // Segments up to the value, each in the colour of the threshold it reaches.
+        const cells = 20;
+
+        for (let i = 0; i < cells; i += 1) {
+          const at = b.min + ((i + 0.5) / cells) * (b.max - b.min);
+          let colour = '#97AAB3';
+          b.thresholds.forEach((th) => { if (at >= th.threshold) { colour = th.color; } });
+          node.append(el('span', { class: (i + 0.5) / cells <= ratio ? 'is-on' : '', style: { background: b.thresholds.length ? colour : b.fill } }));
+        }
+      } else {
+        node.append(el('span', { class: 'zbx-bar__fill', style: { width: `${(ratio * 100).toFixed(1)}%`, background: b.fill } }));
+      }
+
+      return node;
+    };
 
     /* ---- Renderers, one per "kind" sent by WidgetDataService ---- */
     const render = {
       problems(body, d) {
-        if (!d.rows.length) { body.append(el('p', { class: 'text-success mb-0', text: t('COM_ZABBIX_JS_NONE', 'No problems') })); return; }
+        if (!d.rows.length) { body.append(el('p', { class: 'zbx-empty zbx-ok', text: t('COM_ZABBIX_JS_NONE', 'No problems') })); return; }
+        const withTags = d.rows.some((r) => r.tags && r.tags.length);
         body.append(table(
-          [t('COM_ZABBIX_JS_TIME', 'Time'), t('COM_ZABBIX_SEVERITY', 'Severity'), t('COM_ZABBIX_JS_HOST', 'Host'), t('COM_ZABBIX_JS_PROBLEM', 'Problem'), t('COM_ZABBIX_JS_DURATION', 'Duration'), t('COM_ZABBIX_JS_ACK', 'Ack')],
+          [t('COM_ZABBIX_JS_TIME', 'Time'), t('COM_ZABBIX_JS_HOST', 'Host'), `${t('COM_ZABBIX_JS_PROBLEM', 'Problem')} • ${t('COM_ZABBIX_SEVERITY', 'Severity')}`, t('COM_ZABBIX_JS_DURATION', 'Duration'), t('COM_ZABBIX_JS_ACK', 'Ack'), ...(withTags ? [t('COM_ZABBIX_JS_TAGS', 'Tags')] : [])],
           d.rows.map((r) => [
-            el('span', { class: 'text-nowrap', text: fmt.dateTime(r.clock) }),
-            sevBadge(r.severity),
+            el('span', { class: 'zbx-nowrap', text: today(r.clock) ? fmt.time(r.clock) : fmt.dateTime(r.clock) }),
             el('span', {}, r.hosts.flatMap((h, i) => (i ? [', ', hostLink(h.hostid, h.name)] : [hostLink(h.hostid, h.name)]))),
-            r.name,
-            el('span', { class: 'text-nowrap', text: P.duration(r.duration) }),
+            // As Zabbix: the problem cell in the severity's colour.
+            el('td', { class: 'zbx-problem-cell', style: { background: SEV[r.severity], color: ink(SEV[r.severity]) }, title: P.severityName(r.severity) }, r.name),
+            el('span', { class: 'zbx-nowrap', text: P.duration(r.duration) }),
             r.acknowledged ? t('COM_ZABBIX_JS_YES', 'Yes') : t('COM_ZABBIX_JS_NO', 'No'),
+            ...(withTags ? [el('span', {}, (r.tags || []).map((tag) => el('span', { class: 'zbx-tag', text: tag })))] : []),
           ]),
         ));
-        if (d.total > d.rows.length) { body.append(el('p', { class: 'small text-body-secondary', text: `${t('COM_ZABBIX_JS_MORE', 'More')}: ${d.total - d.rows.length}` })); }
       },
 
       severity(body, d) {
         const sevs = d.severities.slice().sort((a, b) => b - a);
-        body.append(el('div', { class: 'zbx-sevboxes' }, sevs.map((s) => el('div', { class: `zbx-sevbox zbx-sev-${s}${d.totals[s] ? '' : ' is-zero'}` }, [
-          el('span', { class: 'zbx-sevbox__n', text: d.totals[s] }), el('span', { class: 'zbx-sevbox__l', text: P.severityName(s) }),
-        ]))));
+        // Every severity in its colour, zero or not, as Zabbix.
+        body.append(boxes(sevs.map((s) => ({ count: d.totals[s], label: P.severityName(s), color: SEV[s] })), d.vertical));
         if (d.showGroups && d.groups.length) {
           body.append(table([t('COM_ZABBIX_JS_HOSTGROUP', 'Host group'), ...sevs.map((s) => P.severityName(s))], d.groups.map((g) => [
             g.name, ...sevs.map((s) => (g.counts[s] ? el('span', { class: `zbx-sev zbx-sev-${s}`, text: g.counts[s] }) : '')),
@@ -81,40 +134,102 @@
       },
 
       availability(body, d) {
-        const label = { available: 'COM_ZABBIX_JS_AVAILABLE', unavailable: 'COM_ZABBIX_JS_UNAVAILABLE', unknown: 'COM_ZABBIX_JS_UNKNOWN', mixed: 'COM_ZABBIX_JS_MIXED' };
-        const states = ['available', 'unavailable', 'unknown'];
-        if (d.onlyTotals || Object.keys(d.types).length === 0) {
-          body.append(el('div', { class: 'zbx-sevboxes' }, [...states, 'mixed'].map((s) => el('div', { class: `zbx-sevbox ${AVAIL_BG[s]}` }, [
-            el('span', { class: 'zbx-sevbox__n', text: d.totals[s] || 0 }), el('span', { class: 'zbx-sevbox__l', text: t(label[s], s) }),
-          ]))));
+        const states = ['available', 'unavailable', 'mixed', 'unknown'];
+        const label = (s) => t(AVAIL[s][0], AVAIL[s][1]);
+
+        if (d.boxes) {
+          const counts = d.single ? d.types[d.single] : d.totals;
+          body.append(boxes([
+            ...states.map((s) => ({ count: counts[s] || 0, label: label(s), color: AVAIL[s][2] })),
+            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '' },
+          ], d.vertical));
           return;
         }
-        body.append(table(['', ...states.map((s) => t(label[s], s)), t('COM_ZABBIX_JS_TOTAL', 'Total')], Object.entries(d.types).map(([type, c]) => [
-          t(`COM_ZABBIX_JS_${type.toUpperCase()}`, type),
-          ...states.map((s) => el('span', { class: c[s] ? `badge ${AVAIL_BADGE[s]}` : 'text-body-secondary', text: c[s] })),
-          String(c.total),
+
+        body.append(table(['', ...states.map(label), t('COM_ZABBIX_JS_TOTAL', 'Total')], Object.entries(d.types).map(([type, c]) => [
+          t(IFACE[type] ? IFACE[type][0] : '', IFACE[type] ? IFACE[type][1] : type),
+          ...states.map((s) => (c[s] ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, String(c[s])) : el('td', { class: 'zbx-num' }, '0'))),
+          el('td', { class: 'zbx-num' }, String(c.total)),
         ])));
       },
 
       value(body, d) {
-        const arrow = d.trend > 0 ? '▲' : (d.trend < 0 ? '▼' : '');
-        body.append(el('div', { class: 'zbx-bigvalue' }, [
-          el('div', { class: 'zbx-bigvalue__v' }, [d.value || '—', arrow ? el('span', { class: 'fs-6 text-body-secondary', 'aria-hidden': 'true', text: ` ${arrow}` }) : null]),
-          el('div', { class: 'small text-body-secondary', text: `${d.host ? `${d.host}: ` : ''}${d.name}` }),
-          d.clock ? el('div', { class: 'small text-body-secondary', text: fmt.dateTime(d.clock) }) : null,
-        ]));
+        // Zabbix's layout: each part in its own place (left/centre/right, top/middle/bottom), sized
+        // as a share of the widget's height.
+        const box = el('div', { class: 'zbx-value', style: d.bg ? { background: d.bg, color: ink(d.bg) } : {} });
+        const height = Math.max(60, body.clientHeight || 120);
+        const font = (st) => ({ 'font-size': `${Math.max(10, (st.size / 100) * height * 0.9)}px`, 'font-weight': st.bold ? '700' : '400', ...(st.color ? { color: st.color } : {}) });
+        const grid = [0, 1, 2].map(() => [0, 1, 2].map(() => []));
+        const place = (st, node) => grid[st.v][st.h].push(node);
+
+        if (d.show.includes(1) && d.description) {
+          place(d.desc, el('div', { class: 'zbx-value__desc', style: font(d.desc), text: d.description }));
+        }
+
+        if (d.show.includes(2)) {
+          const [whole, decimals] = String(d.number).split(/(?=\.\d+$)/);
+          const number = el('span', { class: 'zbx-value__number', style: font(d.value) }, [
+            whole, decimals ? el('span', { style: { 'font-size': `${Math.max(9, (d.value.decimalSize / 100) * height * 0.9)}px` }, text: decimals }) : null,
+          ]);
+          const units = d.units ? el('span', { class: 'zbx-value__units', style: font(d.unitStyle), text: d.units }) : null;
+          const arrow = d.show.includes(4) && d.trend
+            ? el('span', { class: 'zbx-value__trend', 'aria-hidden': 'true', style: { color: d.trend > 0 ? d.up : d.down }, text: d.trend > 0 ? '▲' : '▼' })
+            : null;
+          const parts = units && d.unitsPos === 0 ? [units, number] : (units && d.unitsPos === 1 ? [units, el('br'), number] : (units && d.unitsPos === 3 ? [number, el('br'), units] : [number, units]));
+          place(d.value, el('div', { class: 'zbx-value__main' }, [...parts.filter(Boolean), arrow]));
+        }
+
+        if (d.show.includes(3) && d.clock) {
+          place(d.time, el('div', { class: 'zbx-value__time', style: font(d.time), text: fmt.dateTime(d.clock) }));
+        }
+
+        ['top', 'middle', 'bottom'].forEach((row, v) => {
+          if (grid[v].some((cell) => cell.length)) {
+            box.append(el('div', { class: `zbx-value__row zbx-value__row--${row}` }, grid[v].map((cell, h) => el('div', { class: `zbx-value__cell zbx-value__cell--${['left', 'center', 'right'][h]}` }, cell))));
+          }
+        });
+
+        if (d.sparkline && d.sparkline.points.length > 1) {
+          box.append(C.sparkline(d.sparkline));
+        }
+
+        body.classList.add('zbx-flush');
+        body.append(box);
       },
 
       gauge(body, d) {
-        const box = el('div', { class: 'zbx-gauge' });
-        body.append(box, el('div', { class: 'small text-body-secondary text-center', text: `${d.host ? `${d.host}: ` : ''}${d.name}` }));
+        body.classList.add('zbx-flush');
+        const box = el('div', { class: 'zbx-gauge', style: d.bg ? { background: d.bg } : {} });
+        body.append(box);
         C.gauge(box, d);
+      },
+
+      systeminfo(body, d) {
+        const names = {
+          version: ['COM_ZABBIX_JS_SI_VERSION', 'Zabbix frontend version'],
+          hosts: ['COM_ZABBIX_JS_SI_HOSTS', 'Number of hosts (enabled/disabled)'],
+          templates: ['COM_ZABBIX_JS_SI_TEMPLATES', 'Number of templates'],
+          items: ['COM_ZABBIX_JS_SI_ITEMS', 'Number of items (enabled/disabled/not supported)'],
+          triggers: ['COM_ZABBIX_JS_SI_TRIGGERS', 'Number of triggers (enabled/disabled [problem/ok])'],
+          users: ['COM_ZABBIX_JS_SI_USERS', 'Number of users'],
+        };
+        const value = (row) => {
+          const v = row.value;
+          if (!Array.isArray(v)) { return String(v); }
+          if (row.name === 'hosts') { return el('span', {}, [el('span', { class: 'zbx-good', text: v[0] }), ' / ', el('span', { class: 'zbx-bad', text: v[1] })]); }
+          if (row.name === 'items') { return el('span', {}, [el('span', { class: 'zbx-good', text: v[0] }), ' / ', el('span', { class: 'zbx-bad', text: v[1] }), ' / ', el('span', { class: 'zbx-muted', text: v[2] })]); }
+          return el('span', {}, [el('span', { class: 'zbx-good', text: v[0] }), ' / ', el('span', { class: 'zbx-bad', text: v[1] }), ' [', el('span', { class: 'zbx-bad', text: v[2] }), ' / ', el('span', { class: 'zbx-good', text: v[3] }), ']']);
+        };
+        if (!d.rows.length) { body.append(empty()); return; }
+        body.append(table([t('COM_ZABBIX_JS_SI_PARAMETER', 'Parameter'), t('COM_ZABBIX_JS_VALUE', 'Value')], d.rows.map((row) => [
+          t(names[row.name][0], names[row.name][1]), value(row),
+        ])));
       },
 
       history(body, d) {
         if (!d.rows.length) { body.append(empty()); return; }
         body.append(table([t('COM_ZABBIX_JS_TIME', 'Time'), t('COM_ZABBIX_JS_HOST', 'Host'), t('COM_ZABBIX_JS_ITEM', 'Item'), t('COM_ZABBIX_JS_VALUE', 'Value')],
-          d.rows.map((r) => [el('span', { class: 'text-nowrap', text: fmt.dateTime(r.clock) }), r.host, r.name, r.value])));
+          d.rows.map((r) => [el('span', { class: 'zbx-nowrap', text: fmt.dateTime(r.clock) }), r.host, r.name, r.value])));
       },
 
       chart(body, d) {
@@ -127,25 +242,60 @@
 
       table(body, d) {
         if (!d.rows.length) { body.append(empty()); return; }
-        body.append(table(d.columns, d.rows.map((cells) => cells.map((c) => (c.hostid ? hostLink(c.hostid, c.display) : c.display)))));
+        // As Zabbix: a column shown as a bar gets two cells, the bar and the value.
+        const head = d.columns.flatMap((c) => (c.bar ? [el('th', { scope: 'col', colspan: '2', text: c.name })] : [el('th', { scope: 'col', text: c.name })]));
+        const rows = d.rows.map((cells) => cells.flatMap((c, i) => {
+          const content = c.hostid ? hostLink(c.hostid, c.display) : c.display;
+
+          if (d.columns[i] && d.columns[i].bar) {
+            return [el('td', { class: 'zbx-bar-cell' }, c.bar ? bar(c.bar) : ''), el('td', { class: 'zbx-nowrap' }, content)];
+          }
+
+          return [el('td', { class: 'zbx-nowrap', style: c.bg ? { background: c.bg, color: ink(c.bg) } : {} }, content)];
+        }));
+        body.append(table(head, rows));
       },
 
       hosts(body, d) {
         if (!d.rows.length) { body.append(empty()); return; }
-        body.append(el('ul', { class: 'list-group list-group-flush zbx-hostlist' }, d.rows.map((h) => el('li', { class: 'list-group-item px-0 py-1 small' }, [
-          el('span', { class: `zbx-dot ${AVAIL_DOT[h.availability] || AVAIL_DOT.unknown}`, title: h.availability }),
+        body.append(el('ul', { class: 'zbx-hostlist' }, d.rows.map((h) => el('li', {}, [
+          el('span', { class: `zbx-dot zbx-avail-${h.availability}`, title: h.availability }),
           hostLink(h.hostid, h.name),
-          h.maintenance ? el('span', { class: 'badge text-bg-info', text: t('COM_ZABBIX_JS_MAINTENANCE', 'Maintenance') }) : null,
+          h.maintenance ? el('span', { class: 'zbx-pill zbx-tone-purple', text: t('COM_ZABBIX_JS_MAINTENANCE', 'Maintenance') }) : null,
           el('span', { class: 'zbx-hostlist__sev' }, [5, 4, 3, 2, 1, 0].filter((s) => h.problems[s]).map((s) => el('span', { class: `zbx-sev zbx-sev-${s}`, title: P.severityName(s), text: h.problems[s] }))),
         ]))));
       },
 
       clock(body, d) {
-        const face = el('div', { class: d.digital ? 'zbx-clock zbx-clock--digital' : 'zbx-clock' });
+        body.classList.add('zbx-flush');
+        const face = el('div', { class: d.digital ? 'zbx-clock zbx-clock--digital' : 'zbx-clock', style: d.bg ? { background: d.bg, color: ink(d.bg) } : {} });
+        // The widget's time zone; "local" = the viewer's browser; none = the portal's.
+        const zone = d.timezone === 'local' ? undefined : (d.timezone || cfg.format.zone);
+        const show = d.show || [2];
+        const part = (key, text) => el('div', { class: `zbx-clock__${key}`, style: { ...(d.colors && d.colors[key] ? { color: d.colors[key] } : {}), ...(d.bold && d.bold[key] ? { 'font-weight': '700' } : {}) }, text });
+        const tzLabel = () => {
+          const name = zone || Intl.DateTimeFormat().resolvedOptions().timeZone;
+          try {
+            const offset = new Intl.DateTimeFormat('en-US', { timeZone: name, timeZoneName: 'longOffset' }).formatToParts(new Date()).find((p) => p.type === 'timeZoneName').value.replace('GMT', 'UTC');
+            return d.tzFull ? `(${offset === 'UTC' ? 'UTC+00:00' : offset}) ${name}` : `(${offset === 'UTC' ? 'UTC+00:00' : offset})`;
+          } catch (e) {
+            return name;
+          }
+        };
         const tick = () => {
           const now = Math.floor(Date.now() / 1000);
-          face.replaceChildren(el('div', { class: 'zbx-clock__time', text: P.format(now, cfg.format.hour12 ? 'h:i:s A' : 'H:i:s', cfg.format.zone) }),
-            el('div', { class: 'small text-body-secondary', text: P.format(now, cfg.format.date || 'd/m/Y', cfg.format.zone) }));
+          const time = d.hour12 ? (d.seconds ? 'h:i:s A' : 'h:i A') : (d.seconds ? 'H:i:s' : 'H:i');
+
+          if (!d.digital) {
+            face.replaceChildren(C.analogClock(P.parts(now, zone)));
+            return;
+          }
+
+          face.replaceChildren(
+            ...(show.includes(1) ? [part('date', P.format(now, 'Y-m-d', zone))] : []),
+            ...(show.includes(2) ? [part('time', P.format(now, time, zone))] : []),
+            ...(show.includes(3) ? [part('tzone', tzLabel())] : []),
+          );
         };
         tick();
         const id = setInterval(() => (face.isConnected ? tick() : clearInterval(id)), 1000);
@@ -155,7 +305,7 @@
       empty(body) { body.append(empty()); },
 
       unsupported(body) {
-        body.append(el('div', { class: 'text-body-secondary' }, [el('p', { class: 'mb-2', text: t('COM_ZABBIX_JS_NOT_DRAWN', 'This widget is not shown in the portal.') }), zabbixLink()]));
+        body.append(el('div', { class: 'zbx-placeholder' }, [el('p', { text: t('COM_ZABBIX_JS_NOT_DRAWN', 'This widget is not shown in the portal.') }), zabbixLink()]));
       },
     };
 
@@ -168,12 +318,12 @@
     cfg.layout.pages.forEach((page, index) => {
       const grid = el('div', { class: 'zbx-grid', id: `zbx-page-${index}`, role: cfg.layout.pages.length > 1 ? 'tabpanel' : null, 'aria-labelledby': cfg.layout.pages.length > 1 ? `zbx-tab-${index}` : null, hidden: index !== 0 });
       const widgets = page.widgets.map((w) => {
-        const body = el('div', { class: 'card-body' });
+        const body = el('div', { class: 'zbx-widget__body' });
         const node = el('section', {
-          class: `card zbx-widget zbx-widget--${w.type}${w.supported ? '' : ' zbx-widget--unsupported'}`,
+          class: `zbx-widget zbx-widget--${w.type}${w.supported ? '' : ' zbx-widget--unsupported'}`,
           style: { '--x': w.x, '--y': w.y, '--w': w.width, '--h': w.height },
           'aria-label': w.title,
-        }, [w.hideHeader ? null : el('h2', { class: 'card-header h6 mb-0', text: w.title }), body]);
+        }, [w.hideHeader ? null : el('h2', { class: 'zbx-widget__title', text: w.title }), body]);
 
         grid.append(node);
 
@@ -201,7 +351,7 @@
       item.node.classList.add('is-loading');
 
       if (!body.childElementCount) {
-        body.append(el('p', { class: 'text-body-secondary mb-0', text: t('COM_ZABBIX_JS_LOADING', 'Loading…') }));
+        body.append(el('p', { class: 'zbx-loading', text: t('COM_ZABBIX_JS_LOADING', 'Loading…') }));
       }
 
       const period = periodSelect && periodSelect.value ? `&period=${encodeURIComponent(periodSelect.value)}` : '';
@@ -214,12 +364,12 @@
         body.replaceChildren();
 
         if (!res.ok || json.error) {
-          body.append(el('p', { class: 'text-danger mb-0', role: 'alert', text: errorText(json.error) }));
+          body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText(json.error) }));
         } else {
           (render[json.data.kind] || render.unsupported)(body, json.data);
         }
       } catch (e) {
-        body.replaceChildren(el('p', { class: 'text-danger mb-0', role: 'alert', text: errorText('') }));
+        body.replaceChildren(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText('') }));
       } finally {
         item.node.classList.remove('is-loading');
       }
@@ -244,11 +394,7 @@
     const show = (index) => {
       current = index;
       pages.forEach((p, i) => { p.grid.hidden = i !== index; });
-      document.querySelectorAll('[data-zbx-tab]').forEach((tab) => {
-        const active = Number(tab.dataset.zbxTab) === index;
-        tab.setAttribute('aria-selected', String(active));
-        tab.classList.toggle('active', active);
-      });
+      document.querySelectorAll('[data-zbx-tab]').forEach((tab) => tab.setAttribute('aria-selected', String(Number(tab.dataset.zbxTab) === index)));
       if (!pages[index].loaded) { loadPage(index); }
     };
 

@@ -154,7 +154,9 @@ final class MonitoringTest extends TestCase
 
         $data = $widgets->data($this->alice, self::widget('item', ['itemid.0' => '1001']));
         self::assertSame('value', $data['kind']);
-        self::assertSame('42.5%', $data['value']);
+        self::assertSame(['42.50', '%'], [$data['number'], $data['units']], 'Decimal places 2, as Zabbix');
+        self::assertSame('CPU', $data['description'], 'Default description {ITEM.NAME}');
+        self::assertSame([1, 2, 3, 4], $data['show']);
         self::assertSame(1, $data['trend']);
 
         self::assertSame(['kind' => 'empty'], $widgets->data($this->alice, self::widget('item', ['itemid.0' => '2001'])), 'DB item is hidden');
@@ -226,11 +228,29 @@ final class MonitoringTest extends TestCase
 
     public function testValueFormatter(): void
     {
+        // As Zabbix's convertUnits(): units after a space, K/M/G (1024 for B), no prefix for %.
         self::assertSame('1.5 KB', ValueFormatter::number(1536, 'B'));
         self::assertSame('2.5 Mbps', ValueFormatter::number(2_500_000, 'bps'));
-        self::assertSame('1d 2h', ValueFormatter::number(93600, 'uptime'));
-        self::assertSame('12.35%', ValueFormatter::number(12.345, '%'));
+        self::assertSame('12.345 %', ValueFormatter::number(12.345, '%'));
+        self::assertSame('226.57 vps', ValueFormatter::number(226.57, '!vps'), '"!" = no prefix, not shown');
+        // Widgets: exact decimal places.
+        self::assertSame('58.19 %', ValueFormatter::number(58.1912, '%', 2));
+        self::assertSame('42.00 °C', ValueFormatter::number(42, '°C', 2));
+        self::assertSame('1.50 KB', ValueFormatter::number(1536, 'B', 2));
+        // Time units.
+        self::assertSame('64 days, 07:02:31', ValueFormatter::number(5554951, 'uptime'));
+        self::assertSame('1 day, 02:00:00', ValueFormatter::number(93600, 'uptime'));
+        self::assertSame('00:05:00', ValueFormatter::number(300, 'uptime'));
+        self::assertSame('1h 38m 51s', ValueFormatter::number(5931, 's'));
+        self::assertSame('21d 3h 42m', ValueFormatter::number(21 * 86400 + 3 * 3600 + 42 * 60 + 10, 's'));
+        self::assertSame('2M 21d 3h', ValueFormatter::number(81 * 86400 + 3 * 3600 + 42 * 60, 's'), 'Zabbix counts 30-day months');
+        self::assertSame('1m 5s 120ms', ValueFormatter::number(65.12, 's'));
+        self::assertSame('0', ValueFormatter::number(0, 's'));
+        // Value mappings keep the formatted value; unsigned integers have no decimals.
+        $map = ['mappings' => [['type' => '0', 'value' => '1', 'newvalue' => 'available']]];
+        self::assertSame('available (1.00)', ValueFormatter::format(['value_type' => '0', 'valuemap' => $map], '1', 2));
         self::assertSame('Up (1)', ValueFormatter::format(['value_type' => '3', 'valuemap' => ['mappings' => [['type' => '0', 'value' => '1', 'newvalue' => 'Up']]]], '1'));
+        self::assertSame('214', ValueFormatter::format(['value_type' => '3', 'units' => ''], '214', 2));
         self::assertSame('text', ValueFormatter::format(['value_type' => '4'], 'text'));
     }
 

@@ -30,6 +30,7 @@ final class WidgetTypes
         'tophosts'      => 'Top hosts',
         'hostnavigator' => 'Host navigator',
         'clock'         => 'Clock',
+        'systeminfo'    => 'System information',
     ];
 
     /** Known but not drawn: an "Open in Zabbix" placeholder is shown. */
@@ -49,7 +50,6 @@ final class WidgetTypes
         'problemhosts'  => 'Problem hosts',
         'scatterplot'   => 'Scatter plot',
         'slareport'     => 'SLA report',
-        'systeminfo'    => 'System information',
         'trigover'      => 'Trigger overview',
         'url'           => 'URL',
         'web'           => 'Web monitoring',

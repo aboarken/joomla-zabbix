@@ -3,6 +3,23 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-11-19
+
+### Changed
+- **The portal's own design is back**, the same as the ServiceDesk Plus and ZKBioTime portals (cards, panels, tables, pills). 1.2.0 used the template's Bootstrap classes, which some templates (e.g. Helix Ultimate with an older Bootstrap) do not have: some badges were invisible. Fonts and link colours still come from the template; the component still loads no Bootstrap or jQuery.
+- **Space on the left and right** of the portal pages, also in a full-width template row.
+- **Values formatted as in Zabbix 7.4**: units after a space (*58.19 %*), the widget's decimal places kept (*42.00 °C*, *available (1.00)*), *uptime* as *64 days, 01:54:51*, seconds as the 3 largest units (*1h 38m 51s*), no unit prefix for units starting with "!".
+- **Problems** and **Problems by severity** leave out symptom problems, as Zabbix does (the counts were too high); a Problems widget with *Show symptoms* still shows them. The problem cell is coloured by severity, today's problems show the time only, and tags are shown when the widget asks for them.
+- **Problems by severity**: every severity in its colour, also at zero, filling the widget.
+- **Host availability**: Zabbix's coloured boxes (Available, Not available, Mixed, Unknown, Total) for one interface type or *Show only totals*, else a table; hosts with some interfaces up and some down count as *Mixed*; active agent checks are counted; disabled hosts and (unless asked for) hosts in maintenance are left out.
+
+### Added
+- **Top hosts**: bars and indicators with threshold colours, min/max, the column's decimal places and base colour, the value next to each bar, thresholds colouring *as is* cells, hosts without a value listed last, hosts in maintenance left out unless asked for. Column headers stay visible while scrolling.
+- **Item value**: description (with {ITEM.NAME}, {HOST.NAME} and other macros), value, time, change indicator and sparkline as chosen in the widget, with their positions, sizes, colours, units position, decimal places, background colour and thresholds.
+- **Gauge**: 180° or 270°, value arc in the colour of the threshold reached, threshold arc and labels, needle, scale, description position, decimal places and colours.
+- **Clock**: date, time and time zone as chosen in the widget, the widget's time zone, seconds, 12/24 hours, colours; analog clocks are drawn too.
+- **System information** widget (System stats): frontend version and the numbers of hosts, templates, items, triggers and users; hosts, items and triggers counted in the user's host groups, templates and users only for Super admins.
+
 ## [1.2.1] - 2026-11-19
 
 ### Removed

@@ -60,7 +60,8 @@ final class DashboardTest extends TestCase
 
         $browser = DashboardLayout::forBrowser($layout);
         self::assertArrayNotHasKey('fields', $browser['pages'][0]['widgets'][0], 'Widget fields stay on the server');
-        self::assertSame(['digital' => true], $browser['pages'][0]['widgets'][2]['clock']);
+        self::assertTrue($browser['pages'][0]['widgets'][2]['clock']['digital']);
+        self::assertSame([2], $browser['pages'][0]['widgets'][2]['clock']['show'], 'Zabbix default: time only');
         self::assertSame('problems', DashboardLayout::widget($layout, '1')['type']);
         self::assertNull(DashboardLayout::widget($layout, '99'));
     }

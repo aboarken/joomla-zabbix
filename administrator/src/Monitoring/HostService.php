@@ -224,14 +224,19 @@ final class HostService
             }
         }
 
-        $types = [];
+        // State of each interface type, as Zabbix's Host availability widget counts it.
+        $byType = [];
 
         foreach ((array) ($row['interfaces'] ?? []) as $interface) {
-            $type = Availability::TYPES[(int) ($interface['type'] ?? 0)] ?? 'other';
-            $state = Availability::interfaceState($interface['available'] ?? 0);
-            // Worst state of each interface type.
-            $rank  = [Availability::UNAVAILABLE => 2, Availability::UNKNOWN => 1, Availability::AVAILABLE => 0];
-            $types[$type] = isset($types[$type]) && $rank[$types[$type]] >= $rank[$state] ? $types[$type] : $state;
+            $type            = Availability::TYPES[(int) ($interface['type'] ?? 0)] ?? 'other';
+            $byType[$type][] = (int) ($interface['available'] ?? 0);
+        }
+
+        $types = array_map(static fn (array $states): string => Availability::typeState($states), $byType);
+
+        // Active agent checks: the host's own active_available (0 = no active checks / unknown).
+        if ((int) ($row['active_available'] ?? 0) !== 0) {
+            $types['agent_active'] = Availability::interfaceState($row['active_available']);
         }
 
         return [

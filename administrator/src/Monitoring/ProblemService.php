@@ -18,6 +18,9 @@ use ZabbixPortal\Component\Zabbix\Administrator\Api\JsonRpcClient;
  *
  * problem.get returns no hosts, so the problems' triggers are read in one batched trigger.get
  * (selectHosts, selectHostGroups); problems on hosts outside the user's scope are dropped.
+ *
+ * Symptom problems (Zabbix 7 cause and symptom events) are left out unless asked for, as in
+ * Zabbix's own Problems by severity and Problems widgets.
  */
 final class ProblemService
 {
@@ -39,6 +42,8 @@ final class ProblemService
      * @param  list<string>  $hostIds     [] = any
      * @param  list<int>     $severities  [] = all
      * @param  int           $ack         0 = all, 1 = unacknowledged only, 2 = acknowledged only
+     * @param  bool          $symptoms    also symptom problems (widget option Show symptoms)
+     * @param  bool          $tags        read the problems' tags
      *
      * @return list<array<string, mixed>>  newest first
      */
@@ -49,7 +54,9 @@ final class ProblemService
         array $severities = [],
         int $limit = 100,
         int $ack = 0,
-        bool $showSuppressed = false
+        bool $showSuppressed = false,
+        bool $symptoms = false,
+        bool $tags = false
     ): array {
         $groups = $scope->groupFilter($groupIds);
 
@@ -87,6 +94,14 @@ final class ProblemService
 
         if (!$showSuppressed) {
             $params['suppressed'] = false;
+        }
+
+        if (!$symptoms) {
+            $params['symptom'] = false;
+        }
+
+        if ($tags) {
+            $params['selectTags'] = ['tag', 'value'];
         }
 
         $problems = $this->client->call('problem.get', $params);
@@ -129,6 +144,10 @@ final class ProblemService
                 'name'         => (string) ($problem['name'] ?? ''),
                 'acknowledged' => (string) ($problem['acknowledged'] ?? '0') === '1',
                 'suppressed'   => (string) ($problem['suppressed'] ?? '0') === '1',
+                'tags'         => array_values(array_map(
+                    static fn ($t): array => ['tag' => (string) ($t['tag'] ?? ''), 'value' => (string) ($t['value'] ?? '')],
+                    \is_array($problem['tags'] ?? null) ? $problem['tags'] : []
+                )),
                 'hosts'        => array_values(array_map(
                     static fn ($h): array => ['hostid' => (string) ($h['hostid'] ?? ''), 'name' => (string) ($h['name'] ?? '')],
                     (array) ($trigger['hosts'] ?? [])
