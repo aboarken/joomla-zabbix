@@ -36,7 +36,7 @@ def main() -> int:
     xml = f"""<?xml version="1.0" encoding="utf-8"?>
 <updates>
     <update>
-        <name>Zabbix Portal</name>
+        <name>Zabbix</name>
         <description>{escape('Integrate Zabbix with Joomla to provide a centralized IT monitoring portal for users.')}</description>
         <element>com_zabbix</element>
         <type>component</type>
