@@ -29,7 +29,7 @@ $cardUrl = function (array $set) use ($f): string {
     <div class="zbx-head">
         <div>
             <?php if ($this->showPageHeading) : ?>
-                <h1><?php echo $this->escape($this->pageHeading); ?></h1>
+                <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
             <?php endif; ?>
         </div>
     </div>

@@ -133,7 +133,37 @@ final class WidgetDataService
             'showGroups' => $fields->int('show_type') !== 1,
             'vertical'   => $fields->int('layout') === 1,
             'severities' => $shown !== [] ? $shown : ProblemService::SEVERITIES,
+            // Clicking a severity lists its problems (newest first), as Zabbix's pop-up does.
+            'lists'      => self::listsBySeverity($rows),
         ];
+    }
+
+    /** Most problems (or hosts) listed when a count box is clicked. */
+    public const LIST_MAX = 100;
+
+    /**
+     * @param  list<array<string, mixed>>  $rows  problems, newest first
+     * @return array<int, list<array<string, mixed>>>  severity => problems
+     */
+    public static function listsBySeverity(array $rows): array
+    {
+        $lists = [];
+
+        foreach ($rows as $row) {
+            $severity = (int) $row['severity'];
+
+            if (\count($lists[$severity] ?? []) < self::LIST_MAX) {
+                $lists[$severity][] = [
+                    'clock'    => $row['clock'],
+                    'duration' => $row['duration'],
+                    'name'     => $row['name'],
+                    'hosts'    => $row['hosts'],
+                    'ack'      => $row['acknowledged'],
+                ];
+            }
+        }
+
+        return $lists;
     }
 
     /**
@@ -159,6 +189,13 @@ final class WidgetDataService
         $empty  = [Availability::AVAILABLE => 0, Availability::UNAVAILABLE => 0, Availability::MIXED => 0, Availability::UNKNOWN => 0, 'total' => 0];
         $types  = array_fill_keys($wanted, $empty);
         $totals = $empty;
+        // Clicking a count lists its hosts: [type or 'total'][state] => [{hostid, name}].
+        $lists  = [];
+        $add    = static function (string $key, string $state, array $host) use (&$lists): void {
+            if (\count($lists[$key][$state] ?? []) < self::LIST_MAX) {
+                $lists[$key][$state][] = ['hostid' => $host['hostid'], 'name' => $host['name']];
+            }
+        };
 
         foreach ($hosts as $host) {
             $states = [];
@@ -168,6 +205,7 @@ final class WidgetDataService
                     $state = $host['interfaces'][$type];
                     $types[$type][$state]++;
                     $types[$type]['total']++;
+                    $add($type, $state, $host);
                     $states[] = match ($state) {
                         Availability::AVAILABLE   => [1],
                         Availability::UNAVAILABLE => [2],
@@ -178,8 +216,10 @@ final class WidgetDataService
             }
 
             if ($states !== []) {
-                $totals[Availability::typeState(array_merge(...$states))]++;
+                $state = Availability::typeState(array_merge(...$states));
+                $totals[$state]++;
                 $totals['total']++;
+                $add('total', $state, $host);
             }
         }
 
@@ -191,6 +231,7 @@ final class WidgetDataService
             'boxes'      => $fields->int('only_totals') === 1 || \count($wanted) === 1,
             'single'     => \count($wanted) === 1 ? $wanted[0] : '',
             'vertical'   => $fields->int('layout') === 1,
+            'lists'      => $lists,
         ];
     }
 

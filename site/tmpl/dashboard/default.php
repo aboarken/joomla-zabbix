@@ -17,7 +17,7 @@ $layout = $this->layout;
     <div class="zbx-head">
         <div>
             <?php if ($this->showPageHeading) : ?>
-                <h1><?php echo $this->escape($this->pageHeading); ?></h1>
+                <h1 class="h2"><?php echo $this->escape($this->pageHeading); ?></h1>
             <?php endif; ?>
             <?php if ($layout !== null) : ?>
                 <p class="zbx-head-meta"><?php echo $this->escape($layout['name']); ?>
@@ -27,6 +27,11 @@ $layout = $this->layout;
 
         <?php if ($layout !== null) : ?>
             <div class="zbx-toolbar">
+                <?php // In one row, as asked: Refresh, Dashboard, Period (then Open in Zabbix). ?>
+                <button type="button" class="zbx-btn zbx-btn--ghost" data-zbx-refresh>
+                    <span class="icon-refresh" aria-hidden="true"></span> <?php echo Text::_('COM_ZABBIX_REFRESH'); ?>
+                </button>
+
                 <?php if ($this->allowChoose && \count($this->dashboards) > 1) : ?>
                     <form method="get" action="<?php echo Route::_('index.php?option=com_zabbix&view=dashboard'); ?>" class="zbx-inline-form">
                         <label class="visually-hidden" for="zbx-dashboard"><?php echo Text::_('COM_ZABBIX_DASHBOARD_CHOOSE'); ?></label>
@@ -46,10 +51,6 @@ $layout = $this->layout;
                         <option value="<?php echo $p; ?>"><?php echo Text::_('COM_ZABBIX_PERIOD_' . strtoupper($p)); ?></option>
                     <?php endforeach; ?>
                 </select>
-
-                <button type="button" class="zbx-btn zbx-btn--ghost" data-zbx-refresh>
-                    <span class="icon-refresh" aria-hidden="true"></span> <?php echo Text::_('COM_ZABBIX_REFRESH'); ?>
-                </button>
 
                 <?php if ($this->zabbixLink !== '') : ?>
                     <a class="zbx-btn zbx-btn--ghost" href="<?php echo $this->escape($this->zabbixLink); ?>" target="_blank" rel="noopener noreferrer">

@@ -28,9 +28,9 @@ read methods (`*.get`) only and never changes anything in Zabbix.
 
 | Zabbix widget | Shown as |
 |---|---|
-| Problems | Table: time, severity, host, problem, duration, acknowledged |
-| Problems by severity | Totals per severity, optionally per host group |
-| Host availability | Available / not available / unknown per interface type, or totals |
+| Problems | Table: time, host, problem (in its severity's colour), duration, acknowledged, tags |
+| Problems by severity | Coloured totals per severity, optionally per host group; click a severity to list its problems and devices |
+| Host availability | Coloured boxes or a table of available / not available / mixed / unknown hosts; click a count to list those devices |
 | Item value, Gauge | Big value with trend arrow; half-circle gauge |
 | Item history (and Plain text) | Latest values table |
 | Graph, Graph (classic) | Line chart (history up to 2 days, hourly trends beyond); item lists and host/item name patterns |

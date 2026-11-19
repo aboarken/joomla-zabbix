@@ -248,3 +248,55 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 /* System information */
 .zbx-good { color: #2f9e44; }
 .zbx-bad { color: #e03131; }
+
+/* ------------------------------------------------------------------------------------------ */
+/* 1.3.1: page title, toolbar, scrolling                                                      */
+/* ------------------------------------------------------------------------------------------ */
+
+/* Page title the size of the ServiceDesk Plus and ZKBioTime portals' (<h1 class="h2">), also
+   on templates without that class. */
+.com-zabbix .zbx-head h1,
+.com-zabbix h1.h2 { margin: 0 0 .25rem; font-size: calc(1.325rem + .9vw); line-height: 1.2; }
+
+@media (min-width: 1200px) {
+  .com-zabbix .zbx-head h1,
+  .com-zabbix h1.h2 { font-size: 2rem; }
+}
+
+/* Toolbar: Refresh, Dashboard, Period (and Open in Zabbix) side by side, at their own width
+   (some templates make every select 100% wide). */
+.com-zabbix .zbx-head { flex-wrap: nowrap; }
+.com-zabbix .zbx-toolbar { flex: 0 1 auto; flex-wrap: nowrap; justify-content: flex-end; }
+.com-zabbix .zbx-toolbar .zbx-select { display: inline-block; flex: 0 1 auto; width: auto; min-width: 9rem; max-width: 18rem; margin: 0; }
+.com-zabbix .zbx-toolbar .zbx-btn { flex: none; margin: 0; }
+
+@media (max-width: 767px) {
+  .com-zabbix .zbx-head { flex-wrap: wrap; }
+  .com-zabbix .zbx-toolbar { flex-wrap: wrap; justify-content: flex-start; }
+  .com-zabbix .zbx-toolbar .zbx-select { flex: 1 1 10rem; max-width: none; }
+}
+
+/* Scrolling inside widgets: tables start at the very top of the widget body, so their header
+   row stays on top while the rows scroll under it (no row shows above the header). */
+.zbx-widget__body:has(> .zbx-table-wrap:first-child) { padding-top: 0; }
+.zbx-widget--problemsbysv .zbx-widget__body:has(> .zbx-table-wrap:first-child) .zbx-table-wrap,
+.zbx-widget--hostavail .zbx-widget__body:has(> .zbx-table-wrap:first-child) .zbx-table-wrap { padding-top: 0; }
+.zbx-widget__body .zbx-table thead th { top: 0; }
+/* Thin scrollbars, as in Zabbix. */
+.zbx-widget__body { scrollbar-width: thin; }
+
+/* Count boxes that open a list (Problems by severity, Host availability) */
+.zbx-box--button { font: inherit; cursor: pointer; border: 0; transition: filter .15s ease; }
+.zbx-box--button:hover { filter: brightness(.94); }
+.zbx-box--button:focus-visible { outline: 3px solid var(--zbx-primary); outline-offset: -3px; }
+.zbx-box--button .zbx-box__n { text-decoration: underline; text-underline-offset: 3px; }
+.zbx-count-link { padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; background: none; border: 0; }
+
+/* The list behind a count */
+.zbx-dialog { width: min(56rem, calc(100vw - 2rem)); max-height: min(80vh, 48rem); padding: 0; color: inherit; background: var(--zbx-card-bg); border: 1px solid var(--zbx-border); border-radius: .75rem; box-shadow: 0 20px 50px rgba(16, 24, 40, .25); }
+.zbx-dialog::backdrop { background: rgba(15, 23, 42, .45); }
+.zbx-dialog__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .75rem 1rem; border-bottom: 1px solid var(--zbx-line); }
+.zbx-dialog__title { margin: 0; font-size: 1.0625rem; font-weight: 600; }
+.zbx-dialog__body { max-height: calc(min(80vh, 48rem) - 4rem); padding: 0 1rem .75rem; overflow: auto; }
+.zbx-dialog .zbx-table thead th { position: sticky; top: 0; z-index: 1; background: var(--zbx-card-bg); box-shadow: inset 0 -1px 0 var(--zbx-line); }
+.zbx-dialog .zbx-table td { white-space: normal; }
