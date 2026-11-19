@@ -133,22 +133,6 @@ final class IdentityTest extends TestCase
         $manager->assign(10, '', '777', 99);
     }
 
-    public function testAutoMatchAllLeavesActiveAndAdminMappingsAlone(): void
-    {
-        $manager = new MappingManager($this->repo, fn () => $this->directory, $this->audit, 'username_email', fn () => $this->now);
-        $this->repo->save(new UserMapping(11, '3', 'bob', '', UserMapping::STATUS_ACTIVE, UserMapping::SOURCE_ADMIN, $this->now, $this->now));
-
-        $counts = $manager->autoMatchAll([
-            ['id' => 10, 'username' => 'alice', 'email' => ''],
-            ['id' => 11, 'username' => 'alice', 'email' => ''],
-            ['id' => 12, 'username' => 'nobody', 'email' => 'shared@example.org'],
-            ['id' => 13, 'username' => 'nobody', 'email' => 'nobody@example.org'],
-        ], 99);
-
-        self::assertSame(['matched' => 1, 'pending' => 0, 'ambiguous' => 1, 'not_found' => 1, 'skipped' => 1], $counts);
-        self::assertSame('bob', $this->repo->rows[11]->zabbixUsername);
-    }
-
     public function testDirectoryUserFromApi(): void
     {
         $user = DirectoryUser::fromApi([

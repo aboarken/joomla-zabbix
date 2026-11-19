@@ -138,6 +138,21 @@
 
   window.ZabbixPortal = { t, el, format, makeFormatter, duration, number, severityName };
 
+  // Page width: Full width. 100vw includes the scrollbar; its width is subtracted in CSS.
+  const scrollbar = () => {
+    if (document.querySelector('.zbx-full-width')) {
+      document.documentElement.style.setProperty('--zbx-scrollbar', `${window.innerWidth - document.documentElement.clientWidth}px`);
+    }
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scrollbar);
+  } else {
+    scrollbar();
+  }
+
+  window.addEventListener('resize', scrollbar);
+
   // Filters that apply as soon as an option is chosen.
   document.addEventListener('change', (event) => {
     const field = event.target.closest('[data-zbx-autosubmit]');

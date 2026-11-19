@@ -107,21 +107,12 @@ final class ApprovalTest extends TestCase
         self::assertTrue($this->resolver(true)->resolve(10, 'alice', 'alice@example.org')->isMatched());
     }
 
-    public function testAutoMatchAllAndRematchRespectTheSetting(): void
+    public function testRematchRespectsTheSetting(): void
     {
-        $counts = $this->manager(false)->autoMatchAll([
-            ['id' => 10, 'username' => 'alice', 'email' => ''],
-            ['id' => 11, 'username' => 'nobody', 'email' => ''],
-        ], 99);
-
-        self::assertSame(['matched' => 0, 'pending' => 1, 'ambiguous' => 0, 'not_found' => 1, 'skipped' => 0], $counts);
-        self::assertSame(UserMapping::STATUS_PENDING, $this->repo->rows[10]->status);
-
-        // Users already waiting are left for the administrator.
-        self::assertSame(1, $this->manager(false)->autoMatchAll([['id' => 10, 'username' => 'alice', 'email' => '']], 99)['skipped']);
-
         self::assertSame('pending', $this->manager(false)->rematch(12, 'alice', '', 99));
+        self::assertSame(UserMapping::STATUS_PENDING, $this->repo->rows[12]->status);
         self::assertSame('matched', $this->manager(true)->rematch(12, 'alice', '', 99));
+        self::assertSame('not_found', $this->manager(false)->rematch(13, 'nobody', '', 99));
     }
 
     public function testSetting(): void

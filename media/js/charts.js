@@ -52,7 +52,7 @@
     const withData = series.filter((s) => s.points && s.points.length);
 
     if (!withData.length) {
-      box.append(P.el('p', { class: 'zbx-empty', text: P.t('COM_ZABBIX_JS_NO_DATA', 'No data') }));
+      box.append(P.el('p', { class: 'text-body-secondary mb-0', text: P.t('COM_ZABBIX_JS_NO_DATA', 'No data') }));
       return;
     }
 
@@ -157,7 +157,7 @@
     const total = slices.reduce((a, s) => a + s.value, 0);
 
     if (!slices.length || total <= 0) {
-      box.append(P.el('p', { class: 'zbx-empty', text: P.t('COM_ZABBIX_JS_NO_DATA', 'No data') }));
+      box.append(P.el('p', { class: 'text-body-secondary mb-0', text: P.t('COM_ZABBIX_JS_NO_DATA', 'No data') }));
       return;
     }
 
@@ -175,7 +175,7 @@
       } else {
         const x1 = Math.cos(angle) * 100; const y1 = Math.sin(angle) * 100;
         const x2 = Math.cos(angle + a) * 100; const y2 = Math.sin(angle + a) * 100;
-        const path = svg('path', { d: `M0,0L${x1},${y1}A100,100 0 ${a > Math.PI ? 1 : 0} 1 ${x2},${y2}Z`, fill: s.color, stroke: 'var(--zbx-card-bg, #fff)', 'stroke-width': 1 });
+        const path = svg('path', { d: `M0,0L${x1},${y1}A100,100 0 ${a > Math.PI ? 1 : 0} 1 ${x2},${y2}Z`, fill: s.color, stroke: 'var(--zbx-bg, #fff)', 'stroke-width': 1 });
         path.append(title);
         root.append(path);
       }
@@ -184,7 +184,7 @@
     });
 
     if (doughnut) {
-      root.append(svg('circle', { r: 55, fill: 'var(--zbx-card-bg, #fff)' }));
+      root.append(svg('circle', { r: 55, fill: 'var(--zbx-bg, #fff)' }));
     }
 
     box.append(P.el('div', { class: 'zbx-pie' }, [root, legend(slices.map((s) => ({

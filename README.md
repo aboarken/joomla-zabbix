@@ -14,14 +14,14 @@ read methods (`*.get`) only and never changes anything in Zabbix.
 | Menu | What it does |
 |---|---|
 | **Integration Settings** | The Zabbix address, an optional **Port** and **Connect via**, and the **API token**. The token is encrypted at rest (AES-256-GCM) and never shown again. Also: TLS verification and a custom CA bundle, timeouts, *Open in Zabbix* links, user-matching rules, dashboard refresh, cache, date/time format and time zone. **Test Connection** checks the Zabbix version and the token's user. **Clear Cache** empties the cache. |
-| **User Mappings** | Links each Joomla user to one Zabbix user. Users are matched **automatically** by username and/or e-mail (from the Zabbix user's media) on their first visit, or by **Auto-match All**. Matches are approved automatically or **wait for your approval** (Integration Settings → *New users*); a notice counts the users waiting. Mappings can also be set by hand. Actions: Confirm (approve), Suspend, Rematch, Remove. A user's edit page shows **what that user will see**: role, readable and denied host groups, and dashboards. |
+| **User Mappings** | Links each Joomla user to one Zabbix user. Users are matched **automatically** by username and/or e-mail (from the Zabbix user's media) on their first visit (or with **Rematch**). Matches are approved automatically or **wait for your approval** (Integration Settings → *New users*); a notice counts the users waiting. Mappings can also be set by hand. Actions: Confirm (approve), Suspend, Rematch, Remove. A user's edit page shows **what that user will see**: role, readable and denied host groups, and dashboards. |
 | **Find Endpoints** | API discovery and diagnostics. It shows the server version and response time, the token's user, role and the role's API rules (warning if the role allows write methods), and each API method the portal uses with its result: *allowed*, *denied* or *error*. It also shows what the token can see (host groups, hosts, templates, users, dashboards, problems) and every dashboard with the widget types it uses, marking those the portal does not draw. Ends with a **Copy diagnostics** button (no secrets). |
 
 ### Site: two menu item types (Menus → Add New Menu Item → Zabbix)
 
 | Menu item type | What the user sees |
 |---|---|
-| **Zabbix Dashboard** | A Zabbix dashboard drawn in Joomla on Zabbix's own grid (72 columns, 70 px rows; stacked on phones), with live data. It has page tabs, a period selector, auto-refresh and an *Open in Zabbix* link. Menu options: a fixed dashboard (or the first the user may see), whether users may switch between the dashboards shared with them, and the refresh interval. |
+| **Zabbix Dashboard** | A Zabbix dashboard drawn in Joomla on Zabbix's own grid (72 columns, 70 px rows; stacked on phones), with live data. It has page tabs, a period selector, auto-refresh and an *Open in Zabbix* link. Menu options: a fixed dashboard (or the first the user may see), whether users may switch between the dashboards shared with them, the refresh interval and the page width. |
 | **Zabbix Hosts** | Summary cards (hosts, available, not available, with problems, in maintenance). Filters: search, host group, status, availability and problems. A table with groups, availability per interface type (ZBX/SNMP/IPMI/JMX) and problem counts per severity. Each host opens a **details page** with interfaces, groups, tags, templates, inventory, current problems and latest data. Every numeric item has a **chart** for 1 h to 30 days. |
 
 ### Dashboard widgets drawn by the portal
@@ -94,9 +94,10 @@ the damage if the token ever leaks.
    `https://zabbix.example.org`, and the API token. **Save**, then **Test Connection**.
 3. **Find Endpoints**: press *Find Endpoints*. Every required method should be *Allowed* and the
    token user a *Super admin*.
-4. **User Mappings**: press **Auto-match All**, then fix *Ambiguous* or *Not found* users by
-   editing them. Open a user to see exactly what they will see. With *Wait for administrator
-   approval*, select the users *Waiting for approval* and click **Confirm**.
+4. **User Mappings**: users are matched on their first visit to the portal. Fix *Ambiguous* or
+   *Not found* users by editing them, or add a mapping in advance with **New**. Open a user to see
+   exactly what they will see. With *Wait for administrator approval*, select the users *Waiting
+   for approval* and click **Confirm**.
 5. **Options → Permissions**: set *View Zabbix Dashboard* and/or *View Zabbix Hosts* to *Allowed*
    for the groups that should use the portal (e.g. *Registered*). Nothing is allowed by default.
 6. **Menus**: add menu items of type **Zabbix → Zabbix Dashboard** and **Zabbix → Zabbix Hosts**.
@@ -105,7 +106,7 @@ the damage if the token ever leaks.
 ### New users: approve automatically or wait for approval
 
 *Integration Settings → User mappings → New users* decides what happens when a Joomla user is
-matched to a Zabbix user automatically (on their first visit, or with **Auto-match All** or
+matched to a Zabbix user automatically (on their first visit, or with
 **Rematch**):
 
 - **Approve automatically** (default): the match works at once.
@@ -124,6 +125,25 @@ waiting:
   next visit.
 
 Mappings you make or confirm yourself are never held.
+
+### Look and page width (Helix Ultimate and other templates)
+
+The portal pages use the site template's **Bootstrap 5** classes (cards, tables, forms, buttons,
+badges, alerts, tabs), so they look like the rest of the site. The component loads no Bootstrap
+and no jQuery of its own; its small stylesheet only adds the dashboard grid, Zabbix's severity
+colours and the charts. Templates without Bootstrap 5 show the pages unstyled.
+
+To show a dashboard over the **whole page width**, either:
+
+- **In Helix Ultimate (recommended)**: *System → Site Template Styles → your Helix style →
+  Duplicate*, open the copy (e.g. *Helix - Full width*) → *Template Options → Layout*. In the row
+  that holds the component (the *Main Body* section), open its settings (gear icon) and switch on
+  **Full Width** (called *Fluid* in some Helix versions). Make sure no module position is published next to it on that
+  page. Save. Then open the Zabbix Dashboard menu item and choose that copy under **Template
+  Style**. Only that page changes.
+- **Or in the menu item**: *Page width → Full width*. The portal then spreads over the whole
+  browser width whatever the template's container. Use it on pages without side module
+  positions. Host details opened from a Zabbix Hosts menu item follow that menu item's setting.
 
 ### Port and Connect via (Zabbix hosted locally)
 

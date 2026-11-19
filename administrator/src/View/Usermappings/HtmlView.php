@@ -64,11 +64,6 @@ final class HtmlView extends BaseHtmlView
 
         $toolbar->addNew('usermap.add');
 
-        $toolbar->standardButton('automatch', 'COM_ZABBIX_MAPPING_AUTOMATCH')
-            ->task('usermap.automatch')
-            ->icon('icon-wand')
-            ->listCheck(false);
-
         $toolbar->standardButton('confirm', 'COM_ZABBIX_MAPPING_CONFIRM')
             ->task('usermap.confirm')
             ->icon('icon-check')
