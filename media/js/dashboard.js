@@ -27,6 +27,14 @@
     const pages = [];
     let current = 0;
     let timer = null;
+    let busy = 0;
+    const refreshButton = document.querySelector('[data-zbx-refresh]');
+    const setBusy = () => {
+      if (refreshButton) {
+        refreshButton.disabled = busy > 0;
+        refreshButton.setAttribute('aria-busy', String(busy > 0));
+      }
+    };
 
     const hostLink = (hostid, name) => (cfg.hostUrl && hostid
       ? el('a', { href: cfg.hostUrl.replace('__ID__', encodeURIComponent(hostid)), text: name })
@@ -416,6 +424,11 @@
         return;
       }
 
+      // Only the newest request of a widget is drawn: an older answer that arrives late (after a
+      // Refresh or a period change) is dropped.
+      item.seq = (item.seq || 0) + 1;
+      const seq = item.seq;
+
       item.node.classList.add('is-loading');
 
       if (!body.childElementCount) {
@@ -423,23 +436,39 @@
       }
 
       const period = periodSelect && periodSelect.value ? `&period=${encodeURIComponent(periodSelect.value)}` : '';
+      const draw = (fill) => {
+        if (seq !== item.seq) {
+          return;
+        }
+
+        // Keep the reader's place in a scrolled widget (auto-refresh every minute or so).
+        const { scrollTop, scrollLeft } = body;
+        body.replaceChildren();
+        body.classList.remove('zbx-flush');
+        fill();
+        body.scrollTop = scrollTop;
+        body.scrollLeft = scrollLeft;
+      };
 
       try {
         const res = await fetch(`${cfg.endpoint}&dashboard=${encodeURIComponent(cfg.dashboard)}&widget=${encodeURIComponent(w.id)}${period}`, {
           credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token },
         });
         const json = await res.json().catch(() => ({ error: 'invalid' }));
-        body.replaceChildren();
 
-        if (!res.ok || json.error) {
-          body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText(json.error) }));
-        } else {
-          (render[json.data.kind] || render.unsupported)(body, json.data);
-        }
+        draw(() => {
+          if (!res.ok || json.error) {
+            body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText(json.error) }));
+          } else {
+            (render[json.data.kind] || render.unsupported)(body, json.data);
+          }
+        });
       } catch (e) {
-        body.replaceChildren(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText('') }));
+        draw(() => body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText('') })));
       } finally {
-        item.node.classList.remove('is-loading');
+        if (seq === item.seq) {
+          item.node.classList.remove('is-loading');
+        }
       }
     };
 
@@ -451,11 +480,17 @@
       }
 
       page.loaded = true;
+      busy += 1;
+      setBusy();
       // A few at a time, so a big dashboard does not open dozens of requests at once.
       const queue = page.widgets.slice();
       const worker = async () => { while (queue.length) { await load(queue.shift()); } };
-      Promise.all([worker(), worker(), worker(), worker()]).then(() => {
+
+      return Promise.all([worker(), worker(), worker(), worker()]).then(() => {
         if (updated) { updated.textContent = `· ${t('COM_ZABBIX_JS_UPDATED', 'Updated')} ${fmt.time(Math.floor(Date.now() / 1000))}`; }
+      }).finally(() => {
+        busy -= 1;
+        setBusy();
       });
     };
 
@@ -476,16 +511,19 @@
       });
     });
 
+    // Other pages are loaded again when shown; the visible one now.
     const refresh = () => {
       pages.forEach((p, i) => { p.loaded = i === current ? p.loaded : false; });
       loadPage(current);
     };
 
-    document.querySelector('[data-zbx-refresh]')?.addEventListener('click', refresh);
+    // Refresh: shows that it is working, and is not run again until it has finished (a period
+    // change always runs, and its answers replace the older ones).
+    refreshButton?.addEventListener('click', () => { if (!busy) { refresh(); } });
     periodSelect?.addEventListener('change', refresh);
 
     if (cfg.refresh > 0) {
-      timer = setInterval(() => { if (!document.hidden) { refresh(); } }, cfg.refresh * 1000);
+      timer = setInterval(() => { if (!document.hidden && !busy) { refresh(); } }, cfg.refresh * 1000);
       window.addEventListener('pagehide', () => clearInterval(timer));
     }
 

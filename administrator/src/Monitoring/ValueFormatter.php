@@ -17,8 +17,9 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Monitoring;
  * - K/M/G/T/P prefixes, with 1024 for B and Bps; no prefix for %, ms, rpm, RPM, and for units
  *   that start with "!" (the "!" is not shown).
  * - "uptime": "64 days, 01:54:51"; "s": the 3 largest units ("1h 38m 51s"); "unixtime": a date.
- * - Widgets pass their "Decimal places" and keep trailing zeros ("1.00"); elsewhere Zabbix shows
- *   up to 4 decimals without trailing zeros (2 with a prefix).
+ * - Widgets pass their "Decimal places", applied to float and integer items alike, with trailing
+ *   zeros ("1.00"), as Zabbix's widgets do (decimals_exact); elsewhere Zabbix shows up to 4
+ *   decimals without trailing zeros (2 with a prefix), and integers without decimals.
  * - Value mappings: "available (1.00)".
  */
 final class ValueFormatter
@@ -102,6 +103,9 @@ final class ValueFormatter
             $units      = substr($units, 1);
             $noPrefix[] = $units;
         }
+
+        // Integers have no decimals unless a widget sets them ("Decimal places").
+        $integer = $integer && $decimals === null;
 
         if ($units === '' || \in_array($units, $noPrefix, true) || abs($value) < 1) {
             return [self::float($value, $integer ? 0 : ($decimals ?? 4), $decimals !== null), $units];

@@ -104,6 +104,29 @@ trait PortalViewTrait
         $this->getDocument()->setTitle($title);
     }
 
+    /**
+     * Hidden fields for a GET filter form. Without SEF URLs, the browser replaces the query of the
+     * form's action with the form's fields, so option, view and Itemid must be fields too.
+     */
+    public function formHidden(string $view): string
+    {
+        $app = Factory::getApplication();
+
+        if ((int) $app->get('sef', 1) === 1) {
+            return '';
+        }
+
+        $html = '<input type="hidden" name="option" value="com_zabbix">'
+            . '<input type="hidden" name="view" value="' . htmlspecialchars($view, ENT_QUOTES, 'UTF-8') . '">';
+        $item = $app->getMenu()->getActive();
+
+        if ($item !== null) {
+            $html .= '<input type="hidden" name="Itemid" value="' . (int) $item->id . '">';
+        }
+
+        return $html;
+    }
+
     public function url(string $query): string
     {
         return Route::_('index.php?option=com_zabbix&' . $query);

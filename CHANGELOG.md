@@ -3,6 +3,14 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] - 2026-11-19
+
+### Fixed
+- **Problem counts now match Zabbix.** Like Zabbix's own Problems and Problems by severity widgets, the portal leaves out problems whose trigger depends on another trigger in a problem state (e.g. *Ethernet has changed to lower speed* depending on *Link down*) and problems of disabled hosts, items or triggers. Problems by severity showed e.g. 168 Information where Zabbix shows 68, and those problems were listed in Current problems.
+- **Widget decimal places apply to integer items too**, as in Zabbix (*available (1.00)* in the Agent column; a column set to 0 decimal places still shows *214*).
+- **Refresh**: an answer that arrives after a newer one (after a Refresh or a period change) no longer replaces it; widgets keep their scroll position when they reload (also with auto-refresh); the button shows that it is working and does not start a second refresh meanwhile.
+- **Dashboard and Hosts filters without SEF URLs**: choosing a dashboard or filtering hosts no longer leads to the home page when Joomla's *Search Engine Friendly URLs* are off.
+
 ## [1.3.2] - 2026-11-19
 
 ### Changed
