@@ -39,13 +39,6 @@ final class ZabbixUserDirectory implements UserDirectoryInterface
         return $this->load()[$userid] ?? null;
     }
 
-    /** Forget the cached list (after Auto-match all). */
-    public function refresh(): void
-    {
-        $this->users = null;
-        $this->cache->set(0, 'directory', [], 1);
-    }
-
     /** @return array<string, DirectoryUser> */
     private function load(): array
     {

@@ -137,34 +137,6 @@ final class MappingManager
         return $pending ? UserMapping::STATUS_PENDING : $result;
     }
 
-    /**
-     * Match every given Joomla user that has no mapping, or an automatic one that is not active.
-     * Administrators' mappings, active mappings and users already waiting for approval are left
-     * alone.
-     *
-     * @param  iterable<array{id: int, username: string, email: string}>  $users
-     *
-     * @return array<string, int>  count per result
-     */
-    public function autoMatchAll(iterable $users, int $actorId): array
-    {
-        $counts = [UserMatcher::MATCHED => 0, UserMapping::STATUS_PENDING => 0, UserMatcher::AMBIGUOUS => 0, UserMatcher::NOT_FOUND => 0, 'skipped' => 0];
-
-        foreach ($users as $user) {
-            $mapping = $this->repository->find($user['id']);
-
-            if ($mapping !== null && ($mapping->isActive() || $mapping->status === UserMapping::STATUS_PENDING || $mapping->source === UserMapping::SOURCE_ADMIN)) {
-                $counts['skipped']++;
-
-                continue;
-            }
-
-            $counts[$this->rematch($user['id'], $user['username'], $user['email'], $actorId)]++;
-        }
-
-        return $counts;
-    }
-
     public function remove(int $joomlaUserId, int $actorId): void
     {
         $this->existing($joomlaUserId);

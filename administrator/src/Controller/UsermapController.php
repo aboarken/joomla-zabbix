@@ -16,7 +16,6 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use Joomla\CMS\User\User;
 use Joomla\CMS\User\UserFactoryInterface;
-use Joomla\Database\DatabaseInterface;
 use Joomla\Utilities\ArrayHelper;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Identity\MappingException;
@@ -115,42 +114,6 @@ final class UsermapController extends BaseController
             fn (int $id, MappingManager $manager) => $manager->remove($id, $this->actorId()),
             'COM_ZABBIX_MAPPING_N_REMOVED'
         );
-    }
-
-    /**
-     * Match every active Joomla user that has no mapping yet, or an automatic one that failed.
-     */
-    public function automatch(): void
-    {
-        $this->guard();
-
-        $db    = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->createQuery()
-            ->select($db->quoteName(['id', 'username', 'email']))
-            ->from($db->quoteName('#__users'))
-            ->where($db->quoteName('block') . ' = 0');
-
-        $users = array_map(
-            static fn (object $u): array => ['id' => (int) $u->id, 'username' => (string) $u->username, 'email' => (string) $u->email],
-            $db->setQuery($query)->loadObjectList()
-        );
-
-        try {
-            $this->component()->getUserDirectory()->refresh();
-            $counts = $this->manager()->autoMatchAll($users, $this->actorId());
-            $this->app->enqueueMessage(Text::sprintf(
-                'COM_ZABBIX_MAPPING_AUTOMATCH_DONE',
-                $counts['matched'],
-                $counts['pending'],
-                $counts['ambiguous'],
-                $counts['not_found'],
-                $counts['skipped']
-            ), 'success');
-        } catch (ZabbixException $e) {
-            $this->app->enqueueMessage(Text::_($e->getLanguageKey()), 'error');
-        }
-
-        $this->setRedirect(Route::_(self::LIST_URL, false));
     }
 
     /**

@@ -3,6 +3,17 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-11-19
+
+### Changed
+- **The portal pages use the site template's Bootstrap 5** (cards, tables, forms, buttons, badges, alerts, tabs) instead of their own design, so they look like the rest of the site (e.g. Helix Ultimate) and follow its colours and dark mode. The component still loads no Bootstrap or jQuery of its own; its stylesheet now only adds the dashboard grid, Zabbix's severity colours and the charts.
+
+### Added
+- **Menu item option Page width** (Zabbix Dashboard and Zabbix Hosts): *As the template* or *Full width*, to spread the portal over the whole browser width. README: how to make a full-width page in Helix Ultimate.
+
+### Removed
+- **Auto-match All** in User Mappings. Users are matched on their first visit to the portal (or with Rematch), and an administrator can add a mapping in advance with New.
+
 ## [1.1.0] - 2026-11-19
 
 ### Added
