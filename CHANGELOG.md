@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-11-19
+
+### Removed
+- The **Page width** menu item option (Zabbix Dashboard and Zabbix Hosts), added in 1.2.0. A full-width page is set in the template instead; the README explains how for Helix Ultimate. Menu items saved with it keep working; the stored value is ignored.
+
 ## [1.2.0] - 2026-11-19
 
 ### Changed

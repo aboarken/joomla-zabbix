@@ -1,8 +1,7 @@
 /*
  * com_zabbix portal. The pages use the site template's Bootstrap 5 (cards, tables, forms, buttons,
  * badges, alerts, tabs); the component loads no Bootstrap or jQuery of its own. This file only
- * adds what Bootstrap has no class for: the dashboard grid, Zabbix's severity colours, charts and
- * the Full width page option. Colours come from Bootstrap's variables, so they follow the
+ * adds what Bootstrap has no class for: the dashboard grid, Zabbix's severity colours, and charts. Colours come from Bootstrap's variables, so they follow the
  * template (and its dark mode).
  */
 [data-zbx-root] {
@@ -16,15 +15,6 @@
   --zbx-line: var(--bs-border-color, #dee2e6);
   --zbx-muted: var(--bs-secondary-color, #6c757d);
   --zbx-bg: var(--bs-body-bg, #fff);
-}
-
-/* Page width: Full width (menu item option). The page takes the whole browser width, whatever
-   the template's container; --zbx-scrollbar is set by portal.js. */
-.zbx-full-width {
-  width: calc(100vw - var(--zbx-scrollbar, 0px));
-  max-width: none;
-  margin-inline: calc(50% - (100vw - var(--zbx-scrollbar, 0px)) / 2);
-  padding-inline: clamp(.75rem, 2vw, 2rem);
 }
 
 /* Zabbix severities (colour always with text or a title) */

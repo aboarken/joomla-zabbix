@@ -15,10 +15,6 @@
                 <option value="0">JNO</option>
                 <option value="1">JYES</option>
             </field>
-            <field name="page_width" type="list" label="COM_ZABBIX_MENU_PAGE_WIDTH" description="COM_ZABBIX_MENU_PAGE_WIDTH_DESC" default="" validate="options">
-                <option value="">COM_ZABBIX_MENU_PAGE_WIDTH_TEMPLATE</option>
-                <option value="full">COM_ZABBIX_MENU_PAGE_WIDTH_FULL</option>
-            </field>
             <field name="refresh" type="list" label="COM_ZABBIX_MENU_REFRESH" description="COM_ZABBIX_MENU_REFRESH_DESC" default="" validate="options">
                 <option value="">COM_ZABBIX_MENU_REFRESH_DEFAULT</option>
                 <option value="0">COM_ZABBIX_SETTINGS_REFRESH_OFF</option>
