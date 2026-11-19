@@ -195,6 +195,16 @@ final class WidgetFidelityTest extends TestCase
         self::assertSame('', WidgetDataService::clock(new WidgetFields([['name' => 'tzone_timezone', 'value' => 'Mars/Base']]))['timezone']);
     }
 
+    public function testProblemsSkipUnmonitoredAndDependentTriggersAsZabbix(): void
+    {
+        $this->fake->routes['problem.get'] = [['eventid' => '1', 'objectid' => '100', 'clock' => '1', 'name' => 'Link down', 'severity' => '2', 'acknowledged' => '0', 'suppressed' => '0']];
+        $this->data('problemsbysv', []);
+
+        $params = $this->fake->lastParams('trigger.get');
+        self::assertTrue($params['monitored']);
+        self::assertTrue($params['skipDependent'], 'e.g. "speed changed" depending on "link down" is not counted');
+    }
+
     public function testCountsComeWithTheirLists(): void
     {
         $avail = $this->data('hostavail', ['interface_type.0' => 1]);

@@ -27,6 +27,14 @@
     const pages = [];
     let current = 0;
     let timer = null;
+    let busy = 0;
+    const refreshButton = document.querySelector('[data-zbx-refresh]');
+    const setBusy = () => {
+      if (refreshButton) {
+        refreshButton.disabled = busy > 0;
+        refreshButton.setAttribute('aria-busy', String(busy > 0));
+      }
+    };
 
     const hostLink = (hostid, name) => (cfg.hostUrl && hostid
       ? el('a', { href: cfg.hostUrl.replace('__ID__', encodeURIComponent(hostid)), text: name })
@@ -80,13 +88,13 @@
      * A list in a dialog (what is behind a count), as Zabbix's pop-up: native <dialog>, closed
      * with Esc, the Close button or a click outside.
      */
-    const showList = (title, head, rows, total) => {
+    const showList = (title, head, rows, total, emptyText = '') => {
       const root = document.querySelector('[data-zbx-root]') || document.body;
       const close = el('button', { type: 'button', class: 'zbx-btn zbx-btn--ghost zbx-btn--sm', text: t('COM_ZABBIX_JS_CLOSE', 'Close') });
       const dialog = el('dialog', { class: 'zbx-dialog', 'aria-label': title }, [
         el('div', { class: 'zbx-dialog__head' }, [el('h2', { class: 'zbx-dialog__title', text: title }), close]),
         el('div', { class: 'zbx-dialog__body' }, [
-          rows.length ? table(head, rows) : empty(),
+          rows.length ? table(head, rows) : (emptyText ? el('p', { class: 'zbx-empty zbx-ok', text: emptyText }) : empty()),
           total > rows.length ? el('p', { class: 'zbx-muted zbx-small', text: `${t('COM_ZABBIX_JS_SHOWING_FIRST', 'Showing the first')} ${rows.length} / ${total}` }) : null,
         ]),
       ]);
@@ -110,10 +118,10 @@
 
     /**
      * Coloured count boxes (Problems by severity, Host availability), as in Zabbix. A box with
-     * something behind it is a button that lists it (b.open).
+     * something behind it is a button that lists it (b.open); b.always makes it a button also at 0.
      */
     const boxes = (items, vertical) => el('div', { class: `zbx-boxes${vertical ? ' zbx-boxes--vertical' : ''}` }, items.map((b) => {
-      const clickable = b.open && Number(b.count) > 0;
+      const clickable = Boolean(b.open) && (Number(b.count) > 0 || Boolean(b.always));
       const node = el(clickable ? 'button' : 'div', {
         class: `zbx-box${clickable ? ' zbx-box--button' : ''}`, type: clickable ? 'button' : null, style: { background: b.color, color: ink(b.color) },
         title: clickable ? `${b.label}: ${t('COM_ZABBIX_JS_SHOW_LIST', 'show the list')}` : null,
@@ -188,22 +196,29 @@
         const states = ['available', 'unavailable', 'mixed', 'unknown'];
         const label = (s) => t(AVAIL[s][0], AVAIL[s][1]);
 
-        // Clicking a count lists those hosts (e.g. Not available: the devices that are down).
+        // Clicking a count lists those hosts: Not available (the devices that are down, always
+        // clickable, also at 0), Mixed and Unknown. Available and Total are not lists to act on.
         const lists = d.lists || {};
+        const LISTED = ['unavailable', 'mixed', 'unknown'];
         const open = (key, state, count) => () => {
-          const list = state === 'total'
-            ? states.flatMap((s) => (lists[key] || {})[s] || [])
-            : ((lists[key] || {})[state] || []);
-          const title = `${state === 'total' ? t('COM_ZABBIX_JS_TOTAL', 'Total') : label(state)}${key !== 'total' && IFACE[key] ? ` – ${t(IFACE[key][0], IFACE[key][1])}` : ''} (${count})`;
-          showList(title, [t('COM_ZABBIX_JS_HOST', 'Host')], hostRows(list), count);
+          const list = (lists[key] || {})[state] || [];
+          const title = `${label(state)}${key !== 'total' && IFACE[key] ? ` – ${t(IFACE[key][0], IFACE[key][1])}` : ''} (${count})`;
+          showList(title, [t('COM_ZABBIX_JS_HOST', 'Host')], hostRows(list), count,
+            state === 'unavailable' ? t('COM_ZABBIX_JS_NONE_DOWN', 'No devices are down.') : '');
         };
 
         if (d.boxes) {
           const key = d.single || 'total';
           const counts = d.single ? d.types[d.single] : d.totals;
           body.append(boxes([
-            ...states.map((s) => ({ count: counts[s] || 0, label: label(s), color: AVAIL[s][2], open: open(key, s, counts[s] || 0) })),
-            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '', open: open(key, 'total', counts.total || 0) },
+            ...states.map((s) => ({
+              count: counts[s] || 0,
+              label: label(s),
+              color: AVAIL[s][2],
+              open: LISTED.includes(s) ? open(key, s, counts[s] || 0) : null,
+              always: s === 'unavailable',
+            })),
+            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '' },
           ], d.vertical));
           return;
         }
@@ -216,7 +231,14 @@
 
         body.append(table(['', ...states.map(label), t('COM_ZABBIX_JS_TOTAL', 'Total')], Object.entries(d.types).map(([type, c]) => [
           t(IFACE[type] ? IFACE[type][0] : '', IFACE[type] ? IFACE[type][1] : type),
-          ...states.map((s) => (c[s] ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, countButton(type, s, c[s])) : el('td', { class: 'zbx-num' }, '0'))),
+          ...states.map((s) => {
+            const count = c[s] || 0;
+            const content = LISTED.includes(s) && (count > 0 || s === 'unavailable') ? countButton(type, s, count) : String(count);
+
+            return count
+              ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, content)
+              : el('td', { class: 'zbx-num' }, content);
+          }),
           el('td', { class: 'zbx-num' }, String(c.total)),
         ])));
       },
@@ -416,6 +438,11 @@
         return;
       }
 
+      // Only the newest request of a widget is drawn: an older answer that arrives late (after a
+      // Refresh or a period change) is dropped.
+      item.seq = (item.seq || 0) + 1;
+      const seq = item.seq;
+
       item.node.classList.add('is-loading');
 
       if (!body.childElementCount) {
@@ -423,23 +450,39 @@
       }
 
       const period = periodSelect && periodSelect.value ? `&period=${encodeURIComponent(periodSelect.value)}` : '';
+      const draw = (fill) => {
+        if (seq !== item.seq) {
+          return;
+        }
+
+        // Keep the reader's place in a scrolled widget (auto-refresh every minute or so).
+        const { scrollTop, scrollLeft } = body;
+        body.replaceChildren();
+        body.classList.remove('zbx-flush');
+        fill();
+        body.scrollTop = scrollTop;
+        body.scrollLeft = scrollLeft;
+      };
 
       try {
         const res = await fetch(`${cfg.endpoint}&dashboard=${encodeURIComponent(cfg.dashboard)}&widget=${encodeURIComponent(w.id)}${period}`, {
           credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token },
         });
         const json = await res.json().catch(() => ({ error: 'invalid' }));
-        body.replaceChildren();
 
-        if (!res.ok || json.error) {
-          body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText(json.error) }));
-        } else {
-          (render[json.data.kind] || render.unsupported)(body, json.data);
-        }
+        draw(() => {
+          if (!res.ok || json.error) {
+            body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText(json.error) }));
+          } else {
+            (render[json.data.kind] || render.unsupported)(body, json.data);
+          }
+        });
       } catch (e) {
-        body.replaceChildren(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText('') }));
+        draw(() => body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText('') })));
       } finally {
-        item.node.classList.remove('is-loading');
+        if (seq === item.seq) {
+          item.node.classList.remove('is-loading');
+        }
       }
     };
 
@@ -451,11 +494,17 @@
       }
 
       page.loaded = true;
+      busy += 1;
+      setBusy();
       // A few at a time, so a big dashboard does not open dozens of requests at once.
       const queue = page.widgets.slice();
       const worker = async () => { while (queue.length) { await load(queue.shift()); } };
-      Promise.all([worker(), worker(), worker(), worker()]).then(() => {
+
+      return Promise.all([worker(), worker(), worker(), worker()]).then(() => {
         if (updated) { updated.textContent = `· ${t('COM_ZABBIX_JS_UPDATED', 'Updated')} ${fmt.time(Math.floor(Date.now() / 1000))}`; }
+      }).finally(() => {
+        busy -= 1;
+        setBusy();
       });
     };
 
@@ -476,16 +525,19 @@
       });
     });
 
+    // Other pages are loaded again when shown; the visible one now.
     const refresh = () => {
       pages.forEach((p, i) => { p.loaded = i === current ? p.loaded : false; });
       loadPage(current);
     };
 
-    document.querySelector('[data-zbx-refresh]')?.addEventListener('click', refresh);
+    // Refresh: shows that it is working, and is not run again until it has finished (a period
+    // change always runs, and its answers replace the older ones).
+    refreshButton?.addEventListener('click', () => { if (!busy) { refresh(); } });
     periodSelect?.addEventListener('change', refresh);
 
     if (cfg.refresh > 0) {
-      timer = setInterval(() => { if (!document.hidden) { refresh(); } }, cfg.refresh * 1000);
+      timer = setInterval(() => { if (!document.hidden && !busy) { refresh(); } }, cfg.refresh * 1000);
       window.addEventListener('pagehide', () => clearInterval(timer));
     }
 

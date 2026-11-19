@@ -250,7 +250,10 @@ final class MonitoringTest extends TestCase
         $map = ['mappings' => [['type' => '0', 'value' => '1', 'newvalue' => 'available']]];
         self::assertSame('available (1.00)', ValueFormatter::format(['value_type' => '0', 'valuemap' => $map], '1', 2));
         self::assertSame('Up (1)', ValueFormatter::format(['value_type' => '3', 'valuemap' => ['mappings' => [['type' => '0', 'value' => '1', 'newvalue' => 'Up']]]], '1'));
-        self::assertSame('214', ValueFormatter::format(['value_type' => '3', 'units' => ''], '214', 2));
+        self::assertSame('214', ValueFormatter::format(['value_type' => '3', 'units' => ''], '214'), 'Integers without widget decimals');
+        self::assertSame('214.00', ValueFormatter::format(['value_type' => '3', 'units' => ''], '214', 2), 'Widget decimals apply to integers too, as Zabbix');
+        self::assertSame('214', ValueFormatter::format(['value_type' => '3', 'units' => ''], '214', 0));
+        self::assertSame('available (1.00)', ValueFormatter::format(['value_type' => '3', 'valuemap' => $map], '1', 2), 'As the Agent column in Zabbix');
         self::assertSame('text', ValueFormatter::format(['value_type' => '4'], 'text'));
     }
 

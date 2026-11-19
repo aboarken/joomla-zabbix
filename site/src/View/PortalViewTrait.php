@@ -80,7 +80,7 @@ trait PortalViewTrait
             'COM_ZABBIX_JS_UNAVAILABLE', 'COM_ZABBIX_JS_UNKNOWN', 'COM_ZABBIX_JS_MIXED', 'COM_ZABBIX_JS_MAINTENANCE',
             'COM_ZABBIX_JS_MORE', 'COM_ZABBIX_JS_UPDATED', 'COM_ZABBIX_JS_ERROR_NOT_LINKED', 'COM_ZABBIX_JS_ERROR_LOGIN',
             'COM_ZABBIX_JS_NONE', 'COM_ZABBIX_JS_AGENT', 'COM_ZABBIX_JS_SNMP', 'COM_ZABBIX_JS_IPMI', 'COM_ZABBIX_JS_JMX',
-            'COM_ZABBIX_JS_AGENT_ACTIVE', 'COM_ZABBIX_JS_TAGS', 'COM_ZABBIX_JS_CLOSE', 'COM_ZABBIX_JS_SHOW_LIST', 'COM_ZABBIX_JS_SHOWING_FIRST', 'COM_ZABBIX_JS_SI_PARAMETER', 'COM_ZABBIX_JS_SI_VERSION',
+            'COM_ZABBIX_JS_AGENT_ACTIVE', 'COM_ZABBIX_JS_TAGS', 'COM_ZABBIX_JS_CLOSE', 'COM_ZABBIX_JS_SHOW_LIST', 'COM_ZABBIX_JS_SHOWING_FIRST', 'COM_ZABBIX_JS_NONE_DOWN', 'COM_ZABBIX_JS_SI_PARAMETER', 'COM_ZABBIX_JS_SI_VERSION',
             'COM_ZABBIX_JS_SI_HOSTS', 'COM_ZABBIX_JS_SI_TEMPLATES', 'COM_ZABBIX_JS_SI_ITEMS', 'COM_ZABBIX_JS_SI_TRIGGERS', 'COM_ZABBIX_JS_SI_USERS',
         ] as $key) {
             Text::script($key);
@@ -102,6 +102,29 @@ trait PortalViewTrait
         };
 
         $this->getDocument()->setTitle($title);
+    }
+
+    /**
+     * Hidden fields for a GET filter form. Without SEF URLs, the browser replaces the query of the
+     * form's action with the form's fields, so option, view and Itemid must be fields too.
+     */
+    public function formHidden(string $view): string
+    {
+        $app = Factory::getApplication();
+
+        if ((int) $app->get('sef', 1) === 1) {
+            return '';
+        }
+
+        $html = '<input type="hidden" name="option" value="com_zabbix">'
+            . '<input type="hidden" name="view" value="' . htmlspecialchars($view, ENT_QUOTES, 'UTF-8') . '">';
+        $item = $app->getMenu()->getActive();
+
+        if ($item !== null) {
+            $html .= '<input type="hidden" name="Itemid" value="' . (int) $item->id . '">';
+        }
+
+        return $html;
     }
 
     public function url(string $query): string

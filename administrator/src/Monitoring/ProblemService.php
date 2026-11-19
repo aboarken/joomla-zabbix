@@ -19,8 +19,12 @@ use ZabbixPortal\Component\Zabbix\Administrator\Api\JsonRpcClient;
  * problem.get returns no hosts, so the problems' triggers are read in one batched trigger.get
  * (selectHosts, selectHostGroups); problems on hosts outside the user's scope are dropped.
  *
- * Symptom problems (Zabbix 7 cause and symptom events) are left out unless asked for, as in
- * Zabbix's own Problems by severity and Problems widgets.
+ * As Zabbix's own Problems and Problems by severity widgets (getSystemStatusData(),
+ * CScreenProblem), these problems are left out:
+ *  - symptom problems (cause and symptom events), unless asked for;
+ *  - problems whose trigger is not monitored (disabled host, item or trigger);
+ *  - problems whose trigger depends on another trigger that is in a problem state
+ *    (e.g. "speed changed" depending on "link down").
  */
 final class ProblemService
 {
@@ -116,6 +120,9 @@ final class ProblemService
             'triggerids'       => array_values(array_unique(array_map(static fn ($p): string => (string) ($p['objectid'] ?? ''), $problems))),
             'selectHosts'      => ['hostid', 'name'],
             'selectHostGroups' => ['groupid', 'name'],
+            // As Zabbix: only monitored triggers, and not those depending on a trigger in problem.
+            'monitored'        => true,
+            'skipDependent'    => true,
             'preservekeys'     => true,
         ]);
         $triggers = \is_array($triggers) ? $triggers : [];

@@ -34,6 +34,7 @@ $layout = $this->layout;
 
                 <?php if ($this->allowChoose && \count($this->dashboards) > 1) : ?>
                     <form method="get" action="<?php echo Route::_('index.php?option=com_zabbix&view=dashboard'); ?>" class="zbx-inline-form">
+                        <?php echo $this->formHidden('dashboard'); ?>
                         <label class="visually-hidden" for="zbx-dashboard"><?php echo Text::_('COM_ZABBIX_DASHBOARD_CHOOSE'); ?></label>
                         <select id="zbx-dashboard" name="dashboard" class="zbx-select" data-zbx-autosubmit>
                             <?php foreach ($this->dashboards as $d) : ?>

@@ -47,6 +47,7 @@ $cardUrl = function (array $set) use ($f): string {
         </div>
 
         <form method="get" action="<?php echo Route::_('index.php?option=com_zabbix&view=hosts'); ?>" class="zbx-filters" role="search">
+            <?php echo $this->formHidden('hosts'); ?>
             <div class="zbx-filter">
                 <label for="zbx-search"><?php echo Text::_('COM_ZABBIX_HOSTS_SEARCH'); ?></label>
                 <input type="search" id="zbx-search" name="search" class="zbx-input" value="<?php echo $this->escape($f['search']); ?>" maxlength="100"
