@@ -7,6 +7,7 @@
 namespace ZabbixPortal\Component\Zabbix\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use ZabbixPortal\Component\Zabbix\Administrator\Dashboard\ZabbixColours;
 use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Dashboard\WidgetDataService;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\AccessGuard;
@@ -173,6 +174,23 @@ final class MonitoringTest extends TestCase
         self::assertSame('#FF0000', $data['series'][0]['color']);
         self::assertSame([[self::NOW - 120, 10.0], [self::NOW - 60, 20.0]], $data['series'][0]['points']);
         self::assertSame(['1001'], $this->fake->lastParams('history.get')['itemids']);
+    }
+
+    public function testPatternDataSetColoursAreZabbixShadesOrPalette(): void
+    {
+        $shades = $this->widgets()->data($this->alice, self::widget('svggraph', [
+            'ds.0.dataset_type' => '1', 'ds.0.hosts.0' => '*', 'ds.0.items.0' => '*', 'ds.0.color' => 'FF465C',
+        ]), Period::from('1h'));
+        $count = \count($shades['series']);
+
+        self::assertGreaterThan(0, $count);
+        self::assertSame(ZabbixColours::variations('#FF465C', $count), array_column($shades['series'], 'color'));
+
+        $palette = $this->widgets()->data($this->alice, self::widget('svggraph', [
+            'ds.0.dataset_type' => '1', 'ds.0.hosts.0' => '*', 'ds.0.items.0' => '*', 'ds.0.color_palette' => '2',
+        ]), Period::from('1h'));
+
+        self::assertSame(ZabbixColours::palette(2, $count), array_column($palette['series'], 'color'));
     }
 
     public function testLongPeriodsReadTrends(): void

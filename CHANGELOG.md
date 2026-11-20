@@ -3,6 +3,19 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.8] - 2026-11-20
+
+### Changed
+- **Zabbix's own colours again, everywhere on the dashboard** (no matte): severity colours as set in your Zabbix, host availability `#34AF67`, `#D64E4E`, `#F1A50B`, `#ACBBC2`, and Top hosts bars in the threshold colours set in the widget. The clearer bars of 1.3.7 stay.
+
+### Fixed
+Dashboard colours checked against Zabbix 7.4's source; these differed:
+- **Graph and Pie chart**: a data set that matches several items (host and item patterns) colours them as Zabbix does, in shades of the data set's colour or, without one, from the data set's Zabbix palette. All items had the same colour, or the portal's own palette.
+- **Graph (classic)** of a single item is drawn in Zabbix's `#00C800`; other fallbacks use Zabbix's first palette.
+- **Item value** change indicators: up `#3DC51D`, down `#FC5A5A`, up/down `#3DC51D` (were `#3BC97D`, `#E45959`, `#4796C4`).
+- **Gauge**: value arc `#0275B8` (was `#42A5F5`), arc background `#EBEBEB`, also on the threshold arc below the first threshold; the needle takes the colour of the threshold reached, else `#1F2C33`, unless the widget sets one.
+- **Clock (analog)**: face `#EBEBEB`, hands `#1F2C33`, second hand `#0275B8`, marks `#ACBBC2`.
+
 ## [1.3.7] - 2026-11-20
 
 ### Changed
