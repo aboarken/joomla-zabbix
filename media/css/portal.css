@@ -214,11 +214,13 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 .zbx-widget--problemsbysv .zbx-widget__body, .zbx-widget--hostavail .zbx-widget__body { padding: 0; }
 .zbx-widget--problemsbysv .zbx-table-wrap, .zbx-widget--hostavail .zbx-table-wrap { padding: .25rem .75rem; }
 
-/* Bars and indicators (Top hosts) */
-.zbx-bar-cell { width: 6rem; }
-.zbx-bar { display: flex; gap: 1px; width: 5.5rem; height: 1.1rem; padding: 1px; background: var(--zbx-card-bg); border: 1px solid var(--zbx-line); border-radius: 2px; }
-.zbx-bar__fill { display: block; height: 100%; border-radius: 1px; }
-.zbx-bar--indicators > span { flex: 1 1 0; opacity: .18; border-radius: 1px; }
+/* Bars and indicators (Top hosts), as Zabbix draws them (z-bar-gauge): 20px high in a grey
+   border, so the whole scale is visible; unlit indicator segments at 25%. */
+.zbx-bar-cell { width: 8rem; min-width: 64px; }
+.zbx-bar { display: flex; gap: 1px; width: 100%; min-width: 64px; height: 20px; padding: 1px; background: var(--zbx-card-bg); border: 1px solid #acbbc2; border-radius: 3px; }
+.zbx-bar__fill { display: block; min-width: 2px; height: 100%; border-radius: 2px; }
+.zbx-bar__fill.is-zero { min-width: 0; }
+.zbx-bar--indicators > span { flex: 1 1 0; opacity: .25; border-radius: 2px; }
 .zbx-bar--indicators > span.is-on { opacity: 1; }
 
 /* Problems: the problem cell in its severity's colour; tags */

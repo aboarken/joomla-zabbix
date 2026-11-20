@@ -139,7 +139,10 @@
       return node;
     }));
 
-    /** A horizontal bar (Top hosts "Bar" and "Indicators"), with threshold colours. */
+    /**
+     * A horizontal bar (Top hosts "Bar" and "Indicators"), with threshold colours, as Zabbix's
+     * z-bar-gauge; colours made matte as the rest of the portal.
+     */
     const bar = (b) => {
       const ratio = Math.max(0, Math.min(1, (b.value - b.min) / (b.max - b.min)));
       const node = el('span', { class: `zbx-bar${b.indicators ? ' zbx-bar--indicators' : ''}`, role: 'img', 'aria-label': String(b.value) });
@@ -149,13 +152,13 @@
         const cells = 20;
 
         for (let i = 0; i < cells; i += 1) {
-          const at = b.min + ((i + 0.5) / cells) * (b.max - b.min);
-          let colour = '#97AAB3';
+          const at = b.min + (i / cells) * (b.max - b.min);
+          let colour = b.base || '#97AAB3';
           b.thresholds.forEach((th) => { if (at >= th.threshold) { colour = th.color; } });
-          node.append(el('span', { class: (i + 0.5) / cells <= ratio ? 'is-on' : '', style: { background: b.thresholds.length ? colour : b.fill } }));
+          node.append(el('span', { class: i / cells < ratio ? 'is-on' : '', style: { background: P.matte(colour) } }));
         }
       } else {
-        node.append(el('span', { class: 'zbx-bar__fill', style: { width: `${(ratio * 100).toFixed(1)}%`, background: b.fill } }));
+        node.append(el('span', { class: `zbx-bar__fill${ratio > 0 ? '' : ' is-zero'}`, style: { width: `${(ratio * 100).toFixed(1)}%`, background: P.matte(b.fill) } }));
       }
 
       return node;
