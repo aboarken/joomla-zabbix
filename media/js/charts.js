@@ -225,9 +225,14 @@
     const root = svg('svg', { viewBox: `-150 ${top} 300 ${bottom - top}`, class: 'zbx-svg zbx-svg--gauge', role: 'img', 'aria-label': `${g.description}: ${g.number} ${g.units}` });
     const value = ratio(g.value);
 
-    // Threshold arc: each band in its threshold's colour.
+    // Threshold arc: each band in its threshold's colour; below the first threshold the arc
+    // background colour (Zabbix: empty_color, default #EBEBEB).
     if (g.thArc && g.thresholds.length) {
       const w = Math.max(2, ((g.thArcSize || 5) / 100) * R);
+      const first = ratio(g.thresholds[0].threshold);
+      if (first > 0) {
+        root.append(svg('path', { d: arc(R - w / 2, 0, first), class: 'zbx-gauge-track', fill: 'none', 'stroke-width': w, ...(g.emptyColor ? { stroke: g.emptyColor } : {}) }));
+      }
       g.thresholds.forEach((th, i) => {
         const f1 = ratio(th.threshold);
         const f2 = i + 1 < g.thresholds.length ? ratio(g.thresholds[i + 1].threshold) : 1;
@@ -241,7 +246,7 @@
     if (show.includes(5)) {
       root.append(svg('path', { d: arc(rValue, 0, 1), class: 'zbx-gauge-track', fill: 'none', 'stroke-width': arcWidth, ...(g.emptyColor ? { stroke: g.emptyColor } : {}) }));
       if (value > 0) {
-        root.append(svg('path', { d: arc(rValue, 0, value), stroke: g.arcColor || '#42A5F5', fill: 'none', 'stroke-width': arcWidth }));
+        root.append(svg('path', { d: arc(rValue, 0, value), stroke: g.arcColor || '#0275B8', fill: 'none', 'stroke-width': arcWidth }));
       }
     }
 
@@ -261,7 +266,10 @@
     // Needle.
     if (show.includes(3)) {
       const [x, y] = at(rValue, value);
-      const colour = g.needleColor || 'currentColor';
+      // As Zabbix: the needle's colour, else the colour of the threshold reached, else #1F2C33.
+      let reached = '';
+      g.thresholds.forEach((th) => { if (g.value >= th.threshold) { reached = th.color; } });
+      const colour = g.needleColor || reached || '#1F2C33';
       root.append(svg('line', { x1: 0, y1: 0, x2: x.toFixed(2), y2: y.toFixed(2), stroke: colour, 'stroke-width': 3, 'stroke-linecap': 'round' }));
       root.append(svg('circle', { r: 5, fill: colour }));
     }

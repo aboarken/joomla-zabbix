@@ -116,6 +116,7 @@ final class WidgetFidelityTest extends TestCase
         self::assertSame('#FFCCCC', $data['bg'], 'Below the threshold: the background colour');
         self::assertNotNull($data['sparkline']);
         self::assertSame('#42A5F5', $data['sparkline']['color'], 'Zabbix default sparkline colour');
+        self::assertSame(['#3DC51D', '#FC5A5A', '#3DC51D'], [$data['up'], $data['down'], $data['updown']], 'Zabbix change indicator colours');
 
         $hot = $this->data('item', ['itemid.0' => '11', 'thresholds.0.color' => 'FF0000', 'thresholds.0.threshold' => 50]);
         self::assertSame('#FF0000', $hot['bg']);

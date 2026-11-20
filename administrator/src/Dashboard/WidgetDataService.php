@@ -30,8 +30,8 @@ use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\ValueFormatter;
  */
 final class WidgetDataService
 {
-    /** Colours used when a data set has none (Zabbix's own palette order). */
-    public const PALETTE = ['#2774a4', '#e57373', '#43a047', '#ffa000', '#8e24aa', '#00897b', '#6d4c41', '#3949ab', '#c0ca33', '#d81b60'];
+    /** Colours used when a data set has none: Zabbix's first palette, in the order Zabbix takes them. */
+    public const PALETTE = ['#F48485', '#CA76BE', '#4876B1', '#619F3A', '#FCC95A', '#7E574D', '#CA767B', '#3B97FF', '#92E79A', '#E37E23'];
 
     private const MAX_PATTERN_ITEMS = 50;
 
@@ -282,9 +282,9 @@ final class WidgetDataService
             'value'       => self::textStyle($fields, 'value', 45, true, 1, 1) + ['decimalSize' => $fields->int('decimal_size', 35)],
             'unitStyle'   => self::textStyle($fields, 'units', 35, true, 1, 1),
             'time'        => self::textStyle($fields, 'time', 15, false, 1, 0),
-            'up'          => self::colour($fields->get('up_color')) ?? '#3BC97D',
-            'down'        => self::colour($fields->get('down_color')) ?? '#E45959',
-            'updown'      => self::colour($fields->get('updown_color')) ?? '#4796C4',
+            'up'          => self::colour($fields->get('up_color')) ?? '#3DC51D',
+            'down'        => self::colour($fields->get('down_color')) ?? '#FC5A5A',
+            'updown'      => self::colour($fields->get('updown_color')) ?? '#3DC51D',
             'sparkline'   => \in_array(5, $show, true) && $numeric ? [
                 'points' => $this->history->series([$item], Period::fromZabbix($fields->get('sparkline.time_period.from', 'now-1h')))[0]['points'] ?? [],
                 'color'  => self::colour($fields->get('sparkline.color')) ?? '#42A5F5',
@@ -433,7 +433,7 @@ final class WidgetDataService
 
         foreach ($this->dataSets($scope, $fields) as $set) {
             foreach ($this->history->series($set['items'], $period) as $i => $line) {
-                $line['color'] = $set['colors'][$i] ?? $set['color'] ?? self::PALETTE[$colour % \count(self::PALETTE)];
+                $line['color'] = $set['colors'][$i] ?? self::PALETTE[$colour % \count(self::PALETTE)];
                 $series[]      = $line;
                 $colour++;
             }
@@ -477,7 +477,9 @@ final class WidgetDataService
         $series = $this->history->series($this->guard->visibleItems($scope, $itemIds), $period);
 
         foreach ($series as $i => &$line) {
-            $line['color'] = $colors[$line['itemid']] ?? self::PALETTE[$i % \count(self::PALETTE)];
+            // A graph item keeps its colour; a simple graph of one item is #00C800, as Zabbix's
+            // chart.php (get_next_color(1)).
+            $line['color'] = $colors[$line['itemid']] ?? ($i === 0 ? '#00C800' : self::PALETTE[$i % \count(self::PALETTE)]);
         }
 
         return ['kind' => 'chart', 'period' => $period->name, 'series' => $series];
@@ -499,7 +501,7 @@ final class WidgetDataService
                     'name'    => (string) ($item['hosts'][0]['name'] ?? '') . ': ' . (string) $item['name'],
                     'value'   => max(0.0, (float) $item['lastvalue']),
                     'display' => ValueFormatter::format($item, $item['lastvalue']),
-                    'color'   => $set['colors'][$i] ?? $set['color'] ?? self::PALETTE[$colour % \count(self::PALETTE)],
+                    'color'   => $set['colors'][$i] ?? self::PALETTE[$colour % \count(self::PALETTE)],
                 ];
                 $colour++;
             }
@@ -864,7 +866,7 @@ final class WidgetDataService
      * The data sets of a Graph or Pie chart widget: item lists (ds.N.itemids.M) or host and item
      * name patterns (ds.N.hosts.M, ds.N.items.M, "*" as wildcard).
      *
-     * @return list<array{items: list<array<string, mixed>>, color?: string, colors: array<int, string>}>
+     * @return list<array{items: list<array<string, mixed>>, colors: array<int, string>}>
      */
     private function dataSets(AccessScope $scope, WidgetFields $fields): array
     {
@@ -887,18 +889,32 @@ final class WidgetDataService
                         $colors[$i] = self::colour($colour);
                     }
                 }
+
+                // An item without a stored colour: the data set's palette, as Zabbix.
+                $missing = ZabbixColours::palette($fields->int($prefix . '.color_palette', 0), max(1, \count($items)));
+
+                foreach (array_keys($items) as $i) {
+                    $colors[$i] ??= $missing[$i] ?? '#' . ZabbixColours::PALETTES[0][0];
+                }
             } else {
-                $items = $this->patternItems($scope, $fields->list($prefix . '.hosts'), $fields->list($prefix . '.items'));
+                $items  = $this->patternItems($scope, $fields->list($prefix . '.hosts'), $fields->list($prefix . '.items'));
+                $colour = self::colour($fields->get($prefix . '.color'));
+                $count  = \count($items);
+
+                // As Zabbix: shades of the data set's colour (or its palette's colours), one per
+                // item; one colour for all items when the data set is aggregated as a whole
+                // (Graph: aggregate_grouping = 1, Pie chart: dataset_aggregation > 0).
+                if ($fields->int($prefix . '.aggregate_grouping', 0) === 1 || $fields->int($prefix . '.dataset_aggregation', 0) !== 0) {
+                    $one    = $colour ?? ZabbixColours::palette($fields->int($prefix . '.color_palette', 0), 1)[0];
+                    $colors = array_fill(0, $count, $one);
+                } elseif ($count > 0) {
+                    $colors = $colour !== null
+                        ? ZabbixColours::variations($colour, $count)
+                        : ZabbixColours::palette($fields->int($prefix . '.color_palette', 0), $count);
+                }
             }
 
-            $set    = ['items' => $items, 'colors' => $colors];
-            $colour = $fields->get($prefix . '.color');
-
-            if (self::colour($colour) !== null) {
-                $set['color'] = self::colour($colour);
-            }
-
-            $sets[] = $set;
+            $sets[] = ['items' => $items, 'colors' => $colors];
         }
 
         return $sets;

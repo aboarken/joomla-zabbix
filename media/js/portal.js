@@ -165,40 +165,6 @@
 
   const severityName = (s) => t(`COM_ZABBIX_SEVERITY_${s}`, ['Not classified', 'Information', 'Warning', 'Average', 'High', 'Disaster'][s]);
 
-  /**
-   * A Zabbix colour made matte: same hue and lightness, 60% of the saturation (less glare).
-   * '#E45959' → '#C87575'.
-   */
-  function matte(hex) {
-    const m = /^#?([0-9a-f]{6})$/i.exec(hex || '');
-
-    if (!m) {
-      return hex;
-    }
-
-    const n = parseInt(m[1], 16);
-    const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((c) => c / 255);
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    const l = (max + min) / 2;
-    const d = max - min;
-
-    if (d === 0) {
-      return `#${m[1].toUpperCase()}`;
-    }
-
-    const s = (d / (1 - Math.abs(2 * l - 1))) * 0.6;
-    let h = max === r ? ((g - b) / d) % 6 : (max === g ? (b - r) / d + 2 : (r - g) / d + 4);
-    h = (h * 60 + 360) % 360;
-
-    const c = (1 - Math.abs(2 * l - 1)) * s;
-    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-    const o = l - c / 2;
-    const [r1, g1, b1] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
-
-    return `#${[r1, g1, b1].map((v) => Math.round((v + o) * 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
-  }
-
   // Severity colours as set in Zabbix (Administration → General → Trigger displaying options),
   // sent by the page; Zabbix's defaults otherwise.
   const SEVERITY_COLOURS = (() => {
@@ -206,7 +172,7 @@
     const options = window.Joomla && Joomla.getOptions ? Joomla.getOptions('com_zabbix.colours', {}) : {};
     const sent = Array.isArray(options.severity) ? options.severity : [];
 
-    return defaults.map((d, i) => matte(/^#[0-9a-f]{6}$/i.test(sent[i] || '') ? sent[i] : d));
+    return defaults.map((d, i) => (/^#[0-9a-f]{6}$/i.test(sent[i] || '') ? sent[i] : d));
   })();
   const severityColour = (s) => SEVERITY_COLOURS[Math.max(0, Math.min(5, Number(s) || 0))];
 
@@ -216,7 +182,7 @@
     SEVERITY_COLOURS.forEach((colour, i) => root.style.setProperty(`--zbx-sev-${i}`, colour));
   });
 
-  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName, severityColour, matte };
+  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName, severityColour };
 
   // Filters that apply as soon as an option is chosen.
   document.addEventListener('change', (event) => {

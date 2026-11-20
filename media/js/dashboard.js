@@ -53,18 +53,17 @@
 
     const empty = () => el('p', { class: 'zbx-empty', text: t('COM_ZABBIX_JS_NO_DATA', 'No data') });
 
-    // Severity colours as set in Zabbix, made matte (portal.js), with the text colours of Zabbix's blue theme
+    // Severity colours as set in Zabbix, with the text colours of Zabbix's blue theme
     // (.na-bg … .disaster-bg), for backgrounds drawn from data.
     const SEV = [0, 1, 2, 3, 4, 5].map((s) => P.severityColour(s));
     const SEV_INK = ['#2A353A', '#00268E', '#734D00', '#733100', '#52190B', '#4B0C0C'];
-    // Host availability in Zabbix's colours (.host-avail-true/false/mixed/unknown: #34AF67,
-    // #D64E4E, #F1A50B, #ACBBC2) made matte as the severities (P.matte), text #1F2C33.
+    // Host availability as in Zabbix's widget (.host-avail-true/false/mixed/unknown), text #1F2C33.
     const AVAIL_INK = '#1F2C33';
     const AVAIL = {
-      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#4D966B'],
-      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#BB6969'],
-      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#C39539'],
-      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#B0B9BE'],
+      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#34AF67'],
+      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#D64E4E'],
+      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#F1A50B'],
+      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#ACBBC2'],
     };
     const IFACE = {
       agent_active: ['COM_ZABBIX_JS_AGENT_ACTIVE', 'Zabbix agent (active checks)'],
@@ -141,7 +140,7 @@
 
     /**
      * A horizontal bar (Top hosts "Bar" and "Indicators"), with threshold colours, as Zabbix's
-     * z-bar-gauge; colours made matte as the rest of the portal.
+     * z-bar-gauge.
      */
     const bar = (b) => {
       const ratio = Math.max(0, Math.min(1, (b.value - b.min) / (b.max - b.min)));
@@ -155,10 +154,10 @@
           const at = b.min + (i / cells) * (b.max - b.min);
           let colour = b.base || '#97AAB3';
           b.thresholds.forEach((th) => { if (at >= th.threshold) { colour = th.color; } });
-          node.append(el('span', { class: i / cells < ratio ? 'is-on' : '', style: { background: P.matte(colour) } }));
+          node.append(el('span', { class: i / cells < ratio ? 'is-on' : '', style: { background: colour } }));
         }
       } else {
-        node.append(el('span', { class: `zbx-bar__fill${ratio > 0 ? '' : ' is-zero'}`, style: { width: `${(ratio * 100).toFixed(1)}%`, background: P.matte(b.fill) } }));
+        node.append(el('span', { class: `zbx-bar__fill${ratio > 0 ? '' : ' is-zero'}`, style: { width: `${(ratio * 100).toFixed(1)}%`, background: b.fill } }));
       }
 
       return node;
