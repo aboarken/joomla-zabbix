@@ -25,8 +25,6 @@ $badge = [
 $date = static fn (?string $v): string => $v ? HTMLHelper::_('date', $v, Text::_('DATE_FORMAT_LC5')) : '—';
 ?>
 <form action="<?php echo Route::_('index.php?option=com_zabbix&view=usermappings'); ?>" method="post" name="adminForm" id="adminForm">
-    <p class="small text-muted"><?php echo Text::_('COM_ZABBIX_MAPPINGS_HELP'); ?></p>
-
     <?php echo LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
 
     <?php if ($this->pending > 0) : ?>

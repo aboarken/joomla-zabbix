@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.10] - 2026-11-20
+
+### Removed
+- The note at the top of **User Mappings** (*Each Joomla user who uses the portal is linked to one Zabbix user…*).
+
 ## [1.3.9] - 2026-11-20
 
 ### Changed
