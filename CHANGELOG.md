@@ -3,12 +3,18 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.6] - 2026-11-20
+
+### Changed
+- **The same colours as Zabbix**, replacing the lighter colours of 1.3.5. Problems, severity badges, Problems by severity and the host page's problem cards use the **severity colours set in your Zabbix** (*Administration → General → Trigger displaying options*), read with `settings.get` and kept for the cache time of Integration Settings (at once with Clear Cache); Zabbix's default colours when they cannot be read. Text on them is in Zabbix's own dark text colour per severity (1.3.5 lightened them; white text on Disaster before).
+- **Host availability in Zabbix's colours**: Available `#34AF67`, Not available `#D64E4E`, Mixed `#F1A50B`, Unknown `#ACBBC2`, with Zabbix's dark text, in the Host availability widget and in the availability labels of the Hosts and host pages (the portal had its own green, red and orange; 1.3.5 lightened them).
+- Find Endpoints also checks `settings.get` (optional).
+- Top hosts bars without a threshold reached are Zabbix's default `#97AAB3` again.
+
 ## [1.3.5] - 2026-11-20
 
 ### Changed
-- **The same colours as Zabbix.** Problems, severity badges, Problems by severity and the host page's problem cards use the **severity colours set in your Zabbix** (*Administration → General → Trigger displaying options*), read with `settings.get` and kept for the cache time of Integration Settings (at once with Clear Cache); Zabbix's default colours when they cannot be read. Text on them is in Zabbix's own dark text colour per severity (was white on Disaster).
-- **Host availability in Zabbix's colours**: Available `#34AF67`, Not available `#D64E4E`, Mixed `#F1A50B`, Unknown `#ACBBC2`, with Zabbix's dark text, in the Host availability widget and in the availability labels of the Hosts and host pages (was a lighter green, red and orange of the portal's own).
-- Find Endpoints also checks `settings.get` (optional).
+- **Softer colours.** The portal's own severity and availability colours keep Zabbix's hues but are lighter (each mixed 40% with white): Problems by severity and Host availability boxes, problem cells, severity badges and the default bar colour of Top hosts. Text on them is dark and easier to read (contrast 6.9:1 or better; the old Disaster red with white text was 3.6:1). Colours set in Zabbix widgets themselves (thresholds, background colours) are shown as configured.
 
 ## [1.3.4] - 2026-11-19
 
