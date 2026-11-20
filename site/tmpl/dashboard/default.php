@@ -28,9 +28,7 @@ $layout = $this->layout;
         <?php if ($layout !== null) : ?>
             <div class="zbx-toolbar">
                 <?php // In one row, as asked: Refresh, Dashboard, Period (then Open in Zabbix). ?>
-                <button type="button" class="zbx-btn zbx-btn--ghost" data-zbx-refresh>
-                    <?php echo $this->icon('refresh'); ?> <?php echo Text::_('COM_ZABBIX_REFRESH'); ?>
-                </button>
+                <button type="button" class="zbx-btn zbx-btn--ghost" data-zbx-refresh><?php echo Text::_('COM_ZABBIX_REFRESH'); ?></button>
 
                 <?php if ($this->allowChoose && \count($this->dashboards) > 1) : ?>
                     <form method="get" action="<?php echo Route::_('index.php?option=com_zabbix&view=dashboard'); ?>" class="zbx-inline-form">
