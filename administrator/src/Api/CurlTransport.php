@@ -62,7 +62,7 @@ final class CurlTransport implements TransportInterface
             CURLOPT_SSL_VERIFYHOST => $options->verifyTls ? 2 : 0,
             CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_ENCODING       => '',
-            CURLOPT_USERAGENT      => 'Joomla-com_zabbix/1.3.8',
+            CURLOPT_USERAGENT      => 'Joomla-com_zabbix/1.3.9',
             CURLOPT_WRITEFUNCTION  => static function ($ch, string $chunk) use (&$buffer): int {
                 if (\strlen($buffer) + \strlen($chunk) > self::MAX_BYTES) {
                     return 0;

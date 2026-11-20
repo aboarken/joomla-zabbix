@@ -132,13 +132,12 @@ trait PortalViewTrait
 
     /**
      * A small icon as inline SVG in the text colour. The component draws its own icons: Joomla's
-     * icon font (icon-refresh, icon-out-2) is not loaded by every template (e.g. Helix Ultimate),
+     * icon font (icon-out-2) is not loaded by every template (e.g. Helix Ultimate),
      * and an empty icon pushed the button text off centre.
      */
     public function icon(string $name): string
     {
         $paths = [
-            'refresh'  => '<path d="M20 11a8 8 0 1 0-2.34 5.66"/><path d="M20 4v7h-7"/>',
             'external' => '<path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
         ];
 

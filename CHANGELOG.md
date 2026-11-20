@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.9] - 2026-11-20
+
+### Changed
+- **Refresh button: text only, in the middle.** The icon is gone, and the text is centred with even padding, also when the template gives buttons other padding or alignment. While widgets load, the button is dimmed.
+
 ## [1.3.8] - 2026-11-20
 
 ### Changed
