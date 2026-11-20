@@ -97,7 +97,7 @@ final class WidgetFidelityTest extends TestCase
         self::assertTrue($cpu['bar']['indicators']);
         self::assertSame('#FFFF00', $cpu['bar']['fill'], 'Colour of the highest threshold reached');
         self::assertSame([0.0, 100.0], [$cpu['bar']['min'], $cpu['bar']['max']]);
-        self::assertSame('#C1CCD1', $data['rows'][1][1]['bar']['fill'], 'Default fill below the thresholds (Zabbix\'s grey, softened)');
+        self::assertSame('#97AAB3', $data['rows'][1][1]['bar']['fill'], 'Zabbix default fill below the thresholds');
         self::assertSame('64 days, 07:02:31', $data['rows'][0][2]['display']);
     }
 

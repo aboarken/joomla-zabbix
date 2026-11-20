@@ -133,6 +133,11 @@ The portal pages have their own design, the same as the ServiceDesk Plus and ZKB
 Fonts and link colours come from the template. The component loads no Bootstrap and no jQuery.
 The pages keep a little space on the left and right, also in a full-width template row.
 
+Colours are Zabbix's own: problems and severities use the severity colours set in your Zabbix
+(*Administration → General → Trigger displaying options*, read with `settings.get` and kept for
+the cache time; Zabbix's defaults if they cannot be read), with the text colours of Zabbix's
+theme, and host availability uses Zabbix's green, red, orange and grey.
+
 Dashboard widgets are drawn as Zabbix 7.4 draws them, with each widget's own settings: Top hosts
 bars and indicators with threshold colours and decimal places, Item value positions, sizes,
 colours, thresholds and sparkline, Gauge thresholds, labels and needle, Clock time zone and

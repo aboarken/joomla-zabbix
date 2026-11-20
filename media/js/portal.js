@@ -165,7 +165,24 @@
 
   const severityName = (s) => t(`COM_ZABBIX_SEVERITY_${s}`, ['Not classified', 'Information', 'Warning', 'Average', 'High', 'Disaster'][s]);
 
-  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName };
+  // Severity colours as set in Zabbix (Administration → General → Trigger displaying options),
+  // sent by the page; Zabbix's defaults otherwise.
+  const SEVERITY_COLOURS = (() => {
+    const defaults = ['#97AAB3', '#7499FF', '#FFC859', '#FFA059', '#E97659', '#E45959'];
+    const options = window.Joomla && Joomla.getOptions ? Joomla.getOptions('com_zabbix.colours', {}) : {};
+    const sent = Array.isArray(options.severity) ? options.severity : [];
+
+    return defaults.map((d, i) => (/^#[0-9a-f]{6}$/i.test(sent[i] || '') ? sent[i] : d));
+  })();
+  const severityColour = (s) => SEVERITY_COLOURS[Math.max(0, Math.min(5, Number(s) || 0))];
+
+  // The page's severity badges, cards and boxes use these colours (CSS variables, set as
+  // properties: allowed by a strict Content Security Policy).
+  document.querySelectorAll('[data-zbx-root]').forEach((root) => {
+    SEVERITY_COLOURS.forEach((colour, i) => root.style.setProperty(`--zbx-sev-${i}`, colour));
+  });
+
+  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName, severityColour };
 
   // Filters that apply as soon as an option is chosen.
   document.addEventListener('change', (event) => {

@@ -614,8 +614,8 @@ final class WidgetDataService
                         'min'        => $col['min'],
                         'max'        => $col['max'],
                         'indicators' => $col['display'] === 3,
-                        // No threshold reached: Zabbix's default bar grey, softened as the portal's palette.
-                        'fill'       => $colour ?? '#C1CCD1',
+                        // No threshold reached: Zabbix's default bar colour.
+                        'fill'       => $colour ?? '#97AAB3',
                         'thresholds' => $col['thresholds'],
                     ];
                 } elseif ($colour !== null && $cell['display'] !== '') {

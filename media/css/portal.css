@@ -1,7 +1,8 @@
 /*
  * com_zabbix portal: the portal's own design on top of the site template (cards, panels, tables,
  * pills), so the pages look the same on any template. Statuses always combine colour with text.
- * Severity colours are Zabbix's own.
+ * Severity and availability colours are Zabbix's own: the severity colours set in Zabbix (sent
+ * by the page, these are Zabbix's defaults) with the text colours of Zabbix's blue theme.
  */
 [data-zbx-root] {
   --zbx-primary: #17426f;
@@ -13,14 +14,18 @@
   --zbx-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
   --zbx-focus: 0 0 0 3px rgba(23, 66, 111, .25);
   --zbx-row: 70px;
-  /* Zabbix's severity colours, softened (mixed 40% with white): same hues, less glare, and dark
-     text on all of them reads at 6.9:1 or better. */
-  --zbx-sev-0: #c1ccd1;
-  --zbx-sev-1: #acc2ff;
-  --zbx-sev-2: #ffde9b;
-  --zbx-sev-3: #ffc69b;
-  --zbx-sev-4: #f2ad9b;
-  --zbx-sev-5: #ef9b9b;
+  --zbx-sev-0: #97aab3;
+  --zbx-sev-1: #7499ff;
+  --zbx-sev-2: #ffc859;
+  --zbx-sev-3: #ffa059;
+  --zbx-sev-4: #e97659;
+  --zbx-sev-5: #e45959;
+  --zbx-sev-ink-0: #2a353a;
+  --zbx-sev-ink-1: #00268e;
+  --zbx-sev-ink-2: #734d00;
+  --zbx-sev-ink-3: #733100;
+  --zbx-sev-ink-4: #52190b;
+  --zbx-sev-ink-5: #4b0c0c;
   overflow-wrap: anywhere;
 }
 
@@ -107,13 +112,16 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 
 /* Pills, severities, availability */
 .zbx-pill { display: inline-flex; align-items: center; gap: .25rem; padding: .0625rem .5rem; margin: 0 .25rem .25rem 0; font-size: .75rem; font-weight: 600; color: var(--zbx-tone, #374151); white-space: nowrap; background: var(--zbx-tone-soft, #f3f4f6); border-radius: 1rem; }
-.zbx-avail-available { --zbx-tone: #166534; --zbx-tone-soft: #dcfce7; }
-.zbx-avail-unavailable { --zbx-tone: #991b1b; --zbx-tone-soft: #fee2e2; }
-.zbx-avail-mixed { --zbx-tone: #9a3412; --zbx-tone-soft: #ffedd5; }
-.zbx-avail-unknown, .zbx-avail-none { --zbx-tone: #4b5563; --zbx-tone-soft: #f3f4f6; }
+.zbx-avail-available { --zbx-tone: #34af67; }
+.zbx-avail-unavailable { --zbx-tone: #d64e4e; }
+.zbx-avail-mixed { --zbx-tone: #f1a50b; }
+.zbx-avail-unknown, .zbx-avail-none { --zbx-tone: #acbbc2; }
+/* As Zabbix's availability colours, with its dark text (#1f2c33). */
+.zbx-pill[class*="zbx-avail-"] { color: #1f2c33; background: var(--zbx-tone); }
 .zbx-sev { display: inline-block; min-width: 1.5rem; padding: .0625rem .375rem; margin: 0 .25rem .125rem 0; font-size: .75rem; font-weight: 600; color: #1f2937; text-align: center; white-space: nowrap; border-radius: .25rem; }
-.zbx-sev-0 { background: var(--zbx-sev-0); } .zbx-sev-1 { background: var(--zbx-sev-1); } .zbx-sev-2 { background: var(--zbx-sev-2); }
-.zbx-sev-3 { background: var(--zbx-sev-3); } .zbx-sev-4 { background: var(--zbx-sev-4); } .zbx-sev-5 { background: var(--zbx-sev-5); }
+.zbx-sev-0 { color: var(--zbx-sev-ink-0); background: var(--zbx-sev-0); } .zbx-sev-1 { color: var(--zbx-sev-ink-1); background: var(--zbx-sev-1); }
+.zbx-sev-2 { color: var(--zbx-sev-ink-2); background: var(--zbx-sev-2); } .zbx-sev-3 { color: var(--zbx-sev-ink-3); background: var(--zbx-sev-3); }
+.zbx-sev-4 { color: var(--zbx-sev-ink-4); background: var(--zbx-sev-4); } .zbx-sev-5 { color: var(--zbx-sev-ink-5); background: var(--zbx-sev-5); }
 .zbx-dot { display: inline-block; width: .625rem; height: .625rem; margin-inline-end: .375rem; background: var(--zbx-tone); border-radius: 50%; }
 
 /* Dashboard */
@@ -133,8 +141,8 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 .zbx-sevbox.is-zero { color: var(--zbx-muted); background: #f3f4f6; }
 .zbx-sevbox__n { font-size: 1.5rem; line-height: 1.1; }
 .zbx-sevbox__l { font-size: .75rem; text-align: center; }
-.zbx-avail-box-available { background: #dcfce7; } .zbx-avail-box-unavailable { background: #fee2e2; }
-.zbx-avail-box-unknown { background: #f3f4f6; } .zbx-avail-box-mixed { background: #ffedd5; }
+.zbx-avail-box-available { background: #34af67; } .zbx-avail-box-unavailable { background: #d64e4e; }
+.zbx-avail-box-unknown { background: #acbbc2; } .zbx-avail-box-mixed { background: #f1a50b; }
 .zbx-bigvalue { display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; }
 .zbx-bigvalue__v { font-size: clamp(1.25rem, 3vw, 2.25rem); font-weight: 700; line-height: 1.2; }
 .zbx-trend { font-size: .6em; color: var(--zbx-muted); }
