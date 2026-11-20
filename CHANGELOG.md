@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-11-20
+
+### Changed
+- **Softer colours.** The portal's own severity and availability colours keep Zabbix's hues but are lighter (each mixed 40% with white): Problems by severity and Host availability boxes, problem cells, severity badges and the default bar colour of Top hosts. Text on them is dark and easier to read (contrast 6.9:1 or better; the old Disaster red with white text was 3.6:1). Colours set in Zabbix widgets themselves (thresholds, background colours) are shown as configured.
+
 ## [1.3.4] - 2026-11-19
 
 ### Changed
