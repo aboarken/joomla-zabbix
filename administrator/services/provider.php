@@ -38,6 +38,7 @@ use ZabbixPortal\Component\Zabbix\Administrator\Log\JoomlaLogger;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\AccessGuard;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\HistoryService;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\HostService;
+use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\SeverityColours;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\ProblemService;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVault;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVaultException;
@@ -168,6 +169,11 @@ return new class () implements ServiceProviderInterface {
         $container->share(
             HostService::class,
             static fn (Container $c): HostService => new HostService($c->get(JsonRpcClient::class), $c->get(ProblemService::class))
+        );
+
+        $container->share(
+            SeverityColours::class,
+            static fn (Container $c): SeverityColours => new SeverityColours($c->get(JsonRpcClient::class), $c->get(CacheInterface::class))
         );
 
         $container->share(

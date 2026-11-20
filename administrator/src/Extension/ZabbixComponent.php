@@ -29,6 +29,7 @@ use ZabbixPortal\Component\Zabbix\Administrator\Log\JoomlaLogger;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\AccessGuard;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\HistoryService;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\HostService;
+use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\SeverityColours;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVault;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\RateLimiter;
 use ZabbixPortal\Component\Zabbix\Administrator\Security\SecretProvider;
@@ -130,6 +131,11 @@ final class ZabbixComponent extends MVCComponent implements RouterServiceInterfa
     public function getHistoryService(): HistoryService
     {
         return $this->service(HistoryService::class);
+    }
+
+    public function getSeverityColours(): SeverityColours
+    {
+        return $this->service(SeverityColours::class);
     }
 
     public function getDashboardService(): DashboardService

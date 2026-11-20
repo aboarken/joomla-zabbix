@@ -53,13 +53,17 @@
 
     const empty = () => el('p', { class: 'zbx-empty', text: t('COM_ZABBIX_JS_NO_DATA', 'No data') });
 
-    // Zabbix's severity colours, for backgrounds drawn from data.
-    const SEV = ['#97AAB3', '#7499FF', '#FFC859', '#FFA059', '#E97659', '#E45959'];
+    // Severity colours as set in Zabbix, with the text colours of Zabbix's blue theme
+    // (.na-bg … .disaster-bg), for backgrounds drawn from data.
+    const SEV = [0, 1, 2, 3, 4, 5].map((s) => P.severityColour(s));
+    const SEV_INK = ['#2A353A', '#00268E', '#734D00', '#733100', '#52190B', '#4B0C0C'];
+    // Host availability as in Zabbix's widget (.host-avail-true/false/mixed/unknown), text #1F2C33.
+    const AVAIL_INK = '#1F2C33';
     const AVAIL = {
-      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#59DB8F'],
-      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#E45959'],
-      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#FFA059'],
-      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#97AAB3'],
+      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#34AF67'],
+      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#D64E4E'],
+      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#F1A50B'],
+      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#ACBBC2'],
     };
     const IFACE = {
       agent_active: ['COM_ZABBIX_JS_AGENT_ACTIVE', 'Zabbix agent (active checks)'],
@@ -123,7 +127,7 @@
     const boxes = (items, vertical) => el('div', { class: `zbx-boxes${vertical ? ' zbx-boxes--vertical' : ''}` }, items.map((b) => {
       const clickable = Boolean(b.open) && Number(b.count) > 0;
       const node = el(clickable ? 'button' : 'div', {
-        class: `zbx-box${clickable ? ' zbx-box--button' : ''}`, type: clickable ? 'button' : null, style: { background: b.color, color: ink(b.color) },
+        class: `zbx-box${clickable ? ' zbx-box--button' : ''}`, type: clickable ? 'button' : null, style: { background: b.color, color: b.ink || ink(b.color) },
         title: clickable ? `${b.label}: ${t('COM_ZABBIX_JS_SHOW_LIST', 'show the list')}` : null,
       }, [el('span', { class: 'zbx-box__n', text: b.count }), el('span', { class: 'zbx-box__l', text: b.label })]);
 
@@ -167,7 +171,7 @@
             el('span', { class: 'zbx-nowrap', text: today(r.clock) ? fmt.time(r.clock) : fmt.dateTime(r.clock) }),
             el('span', {}, r.hosts.flatMap((h, i) => (i ? [', ', hostLink(h.hostid, h.name)] : [hostLink(h.hostid, h.name)]))),
             // As Zabbix: the problem cell in the severity's colour.
-            el('td', { class: 'zbx-problem-cell', style: { background: SEV[r.severity], color: ink(SEV[r.severity]) }, title: P.severityName(r.severity) }, r.name),
+            el('td', { class: 'zbx-problem-cell', style: { background: SEV[r.severity], color: SEV_INK[r.severity] }, title: P.severityName(r.severity) }, r.name),
             el('span', { class: 'zbx-nowrap', text: P.duration(r.duration) }),
             r.acknowledged ? t('COM_ZABBIX_JS_YES', 'Yes') : t('COM_ZABBIX_JS_NO', 'No'),
             ...(withTags ? [el('span', {}, (r.tags || []).map((tag) => el('span', { class: 'zbx-tag', text: tag })))] : []),
@@ -182,6 +186,7 @@
           count: d.totals[s],
           label: P.severityName(s),
           color: SEV[s],
+          ink: SEV_INK[s],
           // Clicking a severity lists its problems and their hosts.
           open: () => showList(`${P.severityName(s)} (${d.totals[s]})`, problemHead(), problemRows((d.lists || {})[s] || []), d.totals[s]),
         })), d.vertical));
@@ -214,9 +219,10 @@
               count: counts[s] || 0,
               label: label(s),
               color: AVAIL[s][2],
+              ink: AVAIL_INK,
               open: LISTED.includes(s) ? open(key, s, counts[s] || 0) : null,
             })),
-            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '' },
+            { count: counts.total || 0, label: t('COM_ZABBIX_JS_TOTAL', 'Total'), color: '', ink: AVAIL_INK },
           ], d.vertical));
           return;
         }
@@ -234,7 +240,7 @@
             const content = LISTED.includes(s) && count > 0 ? countButton(type, s, count) : String(count);
 
             return count
-              ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: ink(AVAIL[s][2]) } }, content)
+              ? el('td', { class: 'zbx-num', style: { background: AVAIL[s][2], color: AVAIL_INK } }, content)
               : el('td', { class: 'zbx-num' }, content);
           }),
           el('td', { class: 'zbx-num' }, String(c.total)),

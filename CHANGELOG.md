@@ -3,6 +3,13 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-11-20
+
+### Changed
+- **The same colours as Zabbix.** Problems, severity badges, Problems by severity and the host page's problem cards use the **severity colours set in your Zabbix** (*Administration → General → Trigger displaying options*), read with `settings.get` and kept for the cache time of Integration Settings (at once with Clear Cache); Zabbix's default colours when they cannot be read. Text on them is in Zabbix's own dark text colour per severity (was white on Disaster).
+- **Host availability in Zabbix's colours**: Available `#34AF67`, Not available `#D64E4E`, Mixed `#F1A50B`, Unknown `#ACBBC2`, with Zabbix's dark text, in the Host availability widget and in the availability labels of the Hosts and host pages (was a lighter green, red and orange of the portal's own).
+- Find Endpoints also checks `settings.get` (optional).
+
 ## [1.3.4] - 2026-11-19
 
 ### Changed

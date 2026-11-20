@@ -16,6 +16,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
+use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\SeverityColours;
 use ZabbixPortal\Component\Zabbix\Administrator\Settings\Settings;
 use ZabbixPortal\Component\Zabbix\Administrator\Support\ComponentAccess;
 use ZabbixPortal\Component\Zabbix\Administrator\Support\Formatter;
@@ -78,6 +79,21 @@ abstract class PortalModel extends BaseDatabaseModel
         }
 
         return new Formatter($tz, $settings->dateFormat(), $settings->timeFormat());
+    }
+
+    /**
+     * The severity colours set in Zabbix (Zabbix's defaults when they cannot be read: colours
+     * never stop a page from being shown).
+     *
+     * @return list<string>
+     */
+    public function severityColours(): array
+    {
+        try {
+            return $this->zabbix()->getSeverityColours()->colours();
+        } catch (\Throwable) {
+            return SeverityColours::DEFAULTS;
+        }
     }
 
     /** Link into the Zabbix front end ('' when links are off). */

@@ -68,6 +68,9 @@ trait PortalViewTrait
         $assets->useStyle('com_zabbix.portal');
         $assets->useScript('com_zabbix.portal');
 
+        // Zabbix's severity colours (as set in Zabbix); portal.js applies them to the page.
+        $document->addScriptOptions('com_zabbix.colours', ['severity' => $model->severityColours()]);
+
         foreach (['0', '1', '2', '3', '4', '5'] as $s) {
             Text::script('COM_ZABBIX_SEVERITY_' . $s);
         }

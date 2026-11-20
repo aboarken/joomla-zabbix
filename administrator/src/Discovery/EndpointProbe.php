@@ -48,6 +48,7 @@ final class EndpointProbe
         'trigger.get'              => ['PROBLEMS', ['output' => ['triggerid'], 'limit' => 1], true],
         'dashboard.get'            => ['DASHBOARDS', ['output' => ['dashboardid'], 'limit' => 1], true],
         'graph.get'                => ['DASHBOARDS', ['output' => ['graphid'], 'limit' => 1], false],
+        'settings.get'             => ['PROBLEMS', ['output' => ['severity_color_0']], false],
     ];
 
     /** Inventory counts (method => language key suffix). */
