@@ -53,13 +53,14 @@
 
     const empty = () => el('p', { class: 'zbx-empty', text: t('COM_ZABBIX_JS_NO_DATA', 'No data') });
 
-    // Zabbix's severity colours, for backgrounds drawn from data.
-    const SEV = ['#97AAB3', '#7499FF', '#FFC859', '#FFA059', '#E97659', '#E45959'];
+    // Zabbix's severity and availability colours, softened (mixed 40% with white, as
+    // --zbx-sev-* in portal.css): same hues, less glare, dark text readable on all of them.
+    const SEV = ['#C1CCD1', '#ACC2FF', '#FFDE9B', '#FFC69B', '#F2AD9B', '#EF9B9B'];
     const AVAIL = {
-      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#59DB8F'],
-      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#E45959'],
-      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#FFA059'],
-      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#97AAB3'],
+      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#9BE9BC'],
+      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#EF9B9B'],
+      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#FFC69B'],
+      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#C1CCD1'],
     };
     const IFACE = {
       agent_active: ['COM_ZABBIX_JS_AGENT_ACTIVE', 'Zabbix agent (active checks)'],
@@ -145,7 +146,7 @@
 
         for (let i = 0; i < cells; i += 1) {
           const at = b.min + ((i + 0.5) / cells) * (b.max - b.min);
-          let colour = '#97AAB3';
+          let colour = '#C1CCD1';
           b.thresholds.forEach((th) => { if (at >= th.threshold) { colour = th.color; } });
           node.append(el('span', { class: (i + 0.5) / cells <= ratio ? 'is-on' : '', style: { background: b.thresholds.length ? colour : b.fill } }));
         }

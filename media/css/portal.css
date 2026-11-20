@@ -13,12 +13,14 @@
   --zbx-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
   --zbx-focus: 0 0 0 3px rgba(23, 66, 111, .25);
   --zbx-row: 70px;
-  --zbx-sev-0: #97aab3;
-  --zbx-sev-1: #7499ff;
-  --zbx-sev-2: #ffc859;
-  --zbx-sev-3: #ffa059;
-  --zbx-sev-4: #e97659;
-  --zbx-sev-5: #e45959;
+  /* Zabbix's severity colours, softened (mixed 40% with white): same hues, less glare, and dark
+     text on all of them reads at 6.9:1 or better. */
+  --zbx-sev-0: #c1ccd1;
+  --zbx-sev-1: #acc2ff;
+  --zbx-sev-2: #ffde9b;
+  --zbx-sev-3: #ffc69b;
+  --zbx-sev-4: #f2ad9b;
+  --zbx-sev-5: #ef9b9b;
   overflow-wrap: anywhere;
 }
 
@@ -111,7 +113,7 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 .zbx-avail-unknown, .zbx-avail-none { --zbx-tone: #4b5563; --zbx-tone-soft: #f3f4f6; }
 .zbx-sev { display: inline-block; min-width: 1.5rem; padding: .0625rem .375rem; margin: 0 .25rem .125rem 0; font-size: .75rem; font-weight: 600; color: #1f2937; text-align: center; white-space: nowrap; border-radius: .25rem; }
 .zbx-sev-0 { background: var(--zbx-sev-0); } .zbx-sev-1 { background: var(--zbx-sev-1); } .zbx-sev-2 { background: var(--zbx-sev-2); }
-.zbx-sev-3 { background: var(--zbx-sev-3); } .zbx-sev-4 { background: var(--zbx-sev-4); } .zbx-sev-5 { background: var(--zbx-sev-5); color: #fff; }
+.zbx-sev-3 { background: var(--zbx-sev-3); } .zbx-sev-4 { background: var(--zbx-sev-4); } .zbx-sev-5 { background: var(--zbx-sev-5); }
 .zbx-dot { display: inline-block; width: .625rem; height: .625rem; margin-inline-end: .375rem; background: var(--zbx-tone); border-radius: 50%; }
 
 /* Dashboard */
@@ -128,7 +130,6 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 .zbx-placeholder { color: var(--zbx-muted); text-align: center; }
 .zbx-sevboxes { display: flex; flex-wrap: wrap; gap: .375rem; margin: 0 0 .5rem; }
 .zbx-sevbox { display: flex; flex: 1 1 5rem; flex-direction: column; align-items: center; justify-content: center; padding: .5rem; font-weight: 600; color: #1f2937; border-radius: .375rem; }
-.zbx-sevbox.zbx-sev-5 { color: #fff; }
 .zbx-sevbox.is-zero { color: var(--zbx-muted); background: #f3f4f6; }
 .zbx-sevbox__n { font-size: 1.5rem; line-height: 1.1; }
 .zbx-sevbox__l { font-size: .75rem; text-align: center; }
