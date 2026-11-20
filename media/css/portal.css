@@ -1,8 +1,9 @@
 /*
  * com_zabbix portal: the portal's own design on top of the site template (cards, panels, tables,
  * pills), so the pages look the same on any template. Statuses always combine colour with text.
- * Severity and availability colours are Zabbix's own: the severity colours set in Zabbix (sent
- * by the page, these are Zabbix's defaults) with the text colours of Zabbix's blue theme.
+ * Severity and availability colours are Zabbix's own made matte (same hue and lightness, 60% of
+ * the saturation): the severity colours set in Zabbix (sent by the page; these are Zabbix's
+ * defaults) with the text colours of Zabbix's blue theme.
  */
 [data-zbx-root] {
   --zbx-primary: #17426f;
@@ -14,12 +15,12 @@
   --zbx-shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 1px 3px rgba(16, 24, 40, .06);
   --zbx-focus: 0 0 0 3px rgba(23, 66, 111, .25);
   --zbx-row: 70px;
-  --zbx-sev-0: #97aab3;
-  --zbx-sev-1: #7499ff;
-  --zbx-sev-2: #ffc859;
-  --zbx-sev-3: #ffa059;
-  --zbx-sev-4: #e97659;
-  --zbx-sev-5: #e45959;
+  --zbx-sev-0: #9da8ad;
+  --zbx-sev-1: #90a6e3;
+  --zbx-sev-2: #debd7a;
+  --zbx-sev-3: #dea57a;
+  --zbx-sev-4: #cc8776;
+  --zbx-sev-5: #c87575;
   --zbx-sev-ink-0: #2a353a;
   --zbx-sev-ink-1: #00268e;
   --zbx-sev-ink-2: #734d00;
@@ -112,11 +113,11 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 
 /* Pills, severities, availability */
 .zbx-pill { display: inline-flex; align-items: center; gap: .25rem; padding: .0625rem .5rem; margin: 0 .25rem .25rem 0; font-size: .75rem; font-weight: 600; color: var(--zbx-tone, #374151); white-space: nowrap; background: var(--zbx-tone-soft, #f3f4f6); border-radius: 1rem; }
-.zbx-avail-available { --zbx-tone: #34af67; }
-.zbx-avail-unavailable { --zbx-tone: #d64e4e; }
-.zbx-avail-mixed { --zbx-tone: #f1a50b; }
-.zbx-avail-unknown, .zbx-avail-none { --zbx-tone: #acbbc2; }
-/* As Zabbix's availability colours, with its dark text (#1f2c33). */
+.zbx-avail-available { --zbx-tone: #4d966b; }
+.zbx-avail-unavailable { --zbx-tone: #bb6969; }
+.zbx-avail-mixed { --zbx-tone: #c39539; }
+.zbx-avail-unknown, .zbx-avail-none { --zbx-tone: #b0b9be; }
+/* Zabbix's availability colours made matte, with its dark text (#1f2c33). */
 .zbx-pill[class*="zbx-avail-"] { color: #1f2c33; background: var(--zbx-tone); }
 .zbx-sev { display: inline-block; min-width: 1.5rem; padding: .0625rem .375rem; margin: 0 .25rem .125rem 0; font-size: .75rem; font-weight: 600; color: #1f2937; text-align: center; white-space: nowrap; border-radius: .25rem; }
 .zbx-sev-0 { color: var(--zbx-sev-ink-0); background: var(--zbx-sev-0); } .zbx-sev-1 { color: var(--zbx-sev-ink-1); background: var(--zbx-sev-1); }
@@ -141,8 +142,8 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 .zbx-sevbox.is-zero { color: var(--zbx-muted); background: #f3f4f6; }
 .zbx-sevbox__n { font-size: 1.5rem; line-height: 1.1; }
 .zbx-sevbox__l { font-size: .75rem; text-align: center; }
-.zbx-avail-box-available { background: #34af67; } .zbx-avail-box-unavailable { background: #d64e4e; }
-.zbx-avail-box-unknown { background: #acbbc2; } .zbx-avail-box-mixed { background: #f1a50b; }
+.zbx-avail-box-available { background: #4d966b; } .zbx-avail-box-unavailable { background: #bb6969; }
+.zbx-avail-box-unknown { background: #b0b9be; } .zbx-avail-box-mixed { background: #c39539; }
 .zbx-bigvalue { display: flex; flex-direction: column; justify-content: center; height: 100%; text-align: center; }
 .zbx-bigvalue__v { font-size: clamp(1.25rem, 3vw, 2.25rem); font-weight: 700; line-height: 1.2; }
 .zbx-trend { font-size: .6em; color: var(--zbx-muted); }
@@ -213,11 +214,13 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
 .zbx-widget--problemsbysv .zbx-widget__body, .zbx-widget--hostavail .zbx-widget__body { padding: 0; }
 .zbx-widget--problemsbysv .zbx-table-wrap, .zbx-widget--hostavail .zbx-table-wrap { padding: .25rem .75rem; }
 
-/* Bars and indicators (Top hosts) */
-.zbx-bar-cell { width: 6rem; }
-.zbx-bar { display: flex; gap: 1px; width: 5.5rem; height: 1.1rem; padding: 1px; background: var(--zbx-card-bg); border: 1px solid var(--zbx-line); border-radius: 2px; }
-.zbx-bar__fill { display: block; height: 100%; border-radius: 1px; }
-.zbx-bar--indicators > span { flex: 1 1 0; opacity: .18; border-radius: 1px; }
+/* Bars and indicators (Top hosts), as Zabbix draws them (z-bar-gauge): 20px high in a grey
+   border, so the whole scale is visible; unlit indicator segments at 25%. */
+.zbx-bar-cell { width: 8rem; min-width: 64px; }
+.zbx-bar { display: flex; gap: 1px; width: 100%; min-width: 64px; height: 20px; padding: 1px; background: var(--zbx-card-bg); border: 1px solid #acbbc2; border-radius: 3px; }
+.zbx-bar__fill { display: block; min-width: 2px; height: 100%; border-radius: 2px; }
+.zbx-bar__fill.is-zero { min-width: 0; }
+.zbx-bar--indicators > span { flex: 1 1 0; opacity: .25; border-radius: 2px; }
 .zbx-bar--indicators > span.is-on { opacity: 1; }
 
 /* Problems: the problem cell in its severity's colour; tags */

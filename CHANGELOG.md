@@ -3,6 +3,12 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.7] - 2026-11-20
+
+### Changed
+- **Zabbix's colours, matte**: the same hue and lightness as in Zabbix with 60% of the saturation, so they no longer glare (e.g. Disaster `#E45959` → `#C87575`, Warning `#FFC859` → `#DEBD7A`). The severity colours set in your Zabbix are made matte too. Host availability: Available `#4D966B` (Zabbix `#34AF67`), Not available `#BB6969` (`#D64E4E`), Mixed `#C39539` (`#F1A50B`), Unknown `#B0B9BE` (`#ACBBC2`). These matte colours were meant for 1.3.6 but missed that release.
+- **Top hosts bars and indicators (e.g. CPU) are clearer**, drawn as Zabbix draws them: 20 px high and wider, in a grey border (`#ACBBC2`) so the whole scale from 0 to the maximum is visible, unlit indicator segments at 25%, and threshold colours made matte. Indicator segments below the first threshold use the column's base colour (Zabbix's grey by default) instead of the colour of the value.
+
 ## [1.3.6] - 2026-11-20
 
 ### Changed

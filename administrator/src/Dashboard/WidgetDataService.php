@@ -616,6 +616,8 @@ final class WidgetDataService
                         'indicators' => $col['display'] === 3,
                         // No threshold reached: Zabbix's default bar colour.
                         'fill'       => $colour ?? '#97AAB3',
+                        // Indicators: segments below the first threshold (Zabbix's fill attribute).
+                        'base'       => $col['base'] ?? '#97AAB3',
                         'thresholds' => $col['thresholds'],
                     ];
                 } elseif ($colour !== null && $cell['display'] !== '') {
