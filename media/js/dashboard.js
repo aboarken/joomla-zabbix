@@ -53,17 +53,18 @@
 
     const empty = () => el('p', { class: 'zbx-empty', text: t('COM_ZABBIX_JS_NO_DATA', 'No data') });
 
-    // Severity colours as set in Zabbix, with the text colours of Zabbix's blue theme
+    // Severity colours as set in Zabbix, made matte (portal.js), with the text colours of Zabbix's blue theme
     // (.na-bg … .disaster-bg), for backgrounds drawn from data.
     const SEV = [0, 1, 2, 3, 4, 5].map((s) => P.severityColour(s));
     const SEV_INK = ['#2A353A', '#00268E', '#734D00', '#733100', '#52190B', '#4B0C0C'];
-    // Host availability as in Zabbix's widget (.host-avail-true/false/mixed/unknown), text #1F2C33.
+    // Host availability in Zabbix's colours (.host-avail-true/false/mixed/unknown: #34AF67,
+    // #D64E4E, #F1A50B, #ACBBC2) made matte as the severities (P.matte), text #1F2C33.
     const AVAIL_INK = '#1F2C33';
     const AVAIL = {
-      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#34AF67'],
-      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#D64E4E'],
-      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#F1A50B'],
-      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#ACBBC2'],
+      available: ['COM_ZABBIX_JS_AVAILABLE', 'Available', '#4D966B'],
+      unavailable: ['COM_ZABBIX_JS_UNAVAILABLE', 'Not available', '#BB6969'],
+      mixed: ['COM_ZABBIX_JS_MIXED', 'Mixed', '#C39539'],
+      unknown: ['COM_ZABBIX_JS_UNKNOWN', 'Unknown', '#B0B9BE'],
     };
     const IFACE = {
       agent_active: ['COM_ZABBIX_JS_AGENT_ACTIVE', 'Zabbix agent (active checks)'],
