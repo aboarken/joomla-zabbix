@@ -3,7 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.13] - 2026-11-23
+
+### Added
+- **Find Endpoints → Matching users by e-mail**: how many Zabbix users the token sees, how many have an e-mail address (in their media, or as username, as with LDAP or SAML sign-in), and how many share an address with another user. Warnings when no Zabbix user has an address (users can only be matched by username or by hand) and when addresses are shared (those users are *Ambiguous*, never matched automatically). Counts only: no addresses in the page or in *Copy diagnostics*.
+- **Find Endpoints checks `template.get`** (optional), used by the *System information* widget.
 
 ### Security
 - **Release workflow split**: tests and the package build run with read-only access, also for pull requests; only publishing (a published release, or a manual run on `main`) can write, and that job runs no code from the repository. A manual release run on another branch than `main` is refused.

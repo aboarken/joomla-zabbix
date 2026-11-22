@@ -63,4 +63,40 @@ final class EndpointsTest extends TestCase
 
         self::assertStringNotContainsString('a1b2c3d4', json_encode($report), 'No token in the report');
     }
+
+    public function testMatchingSummaryCountsEmailsWithoutListingThem(): void
+    {
+        $fake = new FakeTransport([
+            'apiinfo.version'          => '7.4.3',
+            'user.checkAuthentication' => ['userid' => '1', 'username' => 'Admin', 'type' => 3, 'roleid' => '3'],
+            'user.get'                 => static fn (array $p): mixed => isset($p['countOutput']) ? '4' : [
+                ['userid' => '1', 'username' => 'Admin', 'medias' => []],
+                ['userid' => '2', 'username' => 'a.moussa@example.edu.sa', 'medias' => []],
+                ['userid' => '3', 'username' => 'helpdesk', 'medias' => [['sendto' => ['IT Team <it@example.edu.sa>']]]],
+                ['userid' => '4', 'username' => 'nightshift', 'medias' => [['sendto' => ['it@example.edu.sa']]]],
+            ],
+        ]);
+
+        $report = (new EndpointProbe($fake->client()))->run();
+
+        self::assertSame(['users' => 4, 'with_email' => 3, 'shared' => 2], $report['matching']);
+        self::assertContains('SHARED_EMAILS', $report['warnings']);
+        self::assertNotContains('NO_EMAILS', $report['warnings']);
+        self::assertStringNotContainsString('example.edu.sa', json_encode($report), 'No e-mail addresses in the diagnostics');
+        self::assertContains('template.get', array_column($report['methods'], 'method'));
+    }
+
+    public function testNoEmailsWarning(): void
+    {
+        $fake = new FakeTransport([
+            'apiinfo.version'          => '7.4.3',
+            'user.checkAuthentication' => ['userid' => '1', 'username' => 'Admin', 'type' => 3, 'roleid' => '3'],
+            'user.get'                 => static fn (array $p): mixed => isset($p['countOutput']) ? '1' : [['userid' => '1', 'username' => 'Admin']],
+        ]);
+
+        $report = (new EndpointProbe($fake->client()))->run();
+
+        self::assertSame(['users' => 1, 'with_email' => 0, 'shared' => 0], $report['matching']);
+        self::assertContains('NO_EMAILS', $report['warnings']);
+    }
 }

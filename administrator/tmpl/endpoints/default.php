@@ -134,6 +134,21 @@ $status = ['allowed' => 'bg-success', 'denied' => 'bg-danger', 'error' => 'bg-wa
                     <?php endforeach; ?>
                 </div>
 
+                <h3 class="h6 mt-3"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_MATCHING'); ?></h3>
+                <?php $m = $r['matching'] ?? null; ?>
+                <?php if (!\is_array($m)) : ?>
+                    <p class="text-muted"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_MATCHING_UNKNOWN'); ?></p>
+                <?php else : ?>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_MATCHING_USERS'); ?></dt>
+                        <dd class="col-sm-8"><?php echo (int) $m['users']; ?></dd>
+                        <dt class="col-sm-4"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_MATCHING_WITH_EMAIL'); ?></dt>
+                        <dd class="col-sm-8"><?php echo (int) $m['with_email']; ?></dd>
+                        <dt class="col-sm-4"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_MATCHING_SHARED'); ?></dt>
+                        <dd class="col-sm-8"><?php echo (int) $m['shared']; ?></dd>
+                    </dl>
+                <?php endif; ?>
+
                 <h3 class="h6 mt-3"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DASHBOARDS'); ?></h3>
                 <?php if ($r['dashboards'] === []) : ?>
                     <p class="text-muted"><?php echo Text::_('COM_ZABBIX_ACCESS_NO_DASHBOARDS'); ?></p>

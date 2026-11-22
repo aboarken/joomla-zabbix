@@ -13,6 +13,8 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Discovery;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\JsonRpcClient;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Dashboard\WidgetTypes;
+use ZabbixPortal\Component\Zabbix\Administrator\Identity\DirectoryUser;
+use ZabbixPortal\Component\Zabbix\Administrator\Identity\UserMatcher;
 
 /**
  * Find Endpoints: what the Zabbix API offers this integration.
@@ -48,6 +50,7 @@ final class EndpointProbe
         'trigger.get'              => ['PROBLEMS', ['output' => ['triggerid'], 'limit' => 1], true],
         'dashboard.get'            => ['DASHBOARDS', ['output' => ['dashboardid'], 'limit' => 1], true],
         'graph.get'                => ['DASHBOARDS', ['output' => ['graphid'], 'limit' => 1], false],
+        'template.get'             => ['DASHBOARDS', ['output' => ['templateid'], 'limit' => 1], false],
         'settings.get'             => ['PROBLEMS', ['output' => ['severity_color_0']], false],
     ];
 
@@ -107,6 +110,7 @@ final class EndpointProbe
             }
         }
 
+        $report['matching']   = $this->matching();
         $report['dashboards'] = $this->dashboards();
         $report['warnings']   = $this->warnings($report);
 
@@ -182,6 +186,65 @@ final class EndpointProbe
         return ['status' => $status, 'ms' => (int) ((hrtime(true) - $started) / 1e6), 'detail' => $detail];
     }
 
+    /**
+     * Can users be matched by e-mail? Counts only (no addresses, so the diagnostics stay free of
+     * personal data): Zabbix users the token sees, those with an e-mail address (in their media,
+     * or as username, as with LDAP or SAML sign-in), and those whose address another user has
+     * too (they are never matched automatically).
+     *
+     * @return array{users: int, with_email: int, shared: int}|null  null when users cannot be read
+     */
+    private function matching(): ?array
+    {
+        try {
+            $rows = $this->client->call('user.get', [
+                'output'       => ['userid', 'username'],
+                'selectMedias' => ['sendto'],
+            ]);
+        } catch (ZabbixException) {
+            return null;
+        }
+
+        $owners = [];
+        $users  = 0;
+        $with   = 0;
+
+        foreach (\is_array($rows) ? $rows : [] as $row) {
+            if (!\is_array($row)) {
+                continue;
+            }
+
+            $users++;
+            $user      = DirectoryUser::fromApi($row);
+            $addresses = $user->emails;
+            $username  = UserMatcher::normaliseEmail($user->username);
+
+            if ($username !== '') {
+                $addresses[] = $username;
+            }
+
+            $addresses = array_unique($addresses);
+
+            if ($addresses !== []) {
+                $with++;
+            }
+
+            foreach ($addresses as $address) {
+                $owners[$address][$user->userid] = true;
+            }
+        }
+
+        $shared = [];
+
+        foreach ($owners as $ids) {
+            if (\count($ids) > 1) {
+                $shared += $ids;
+            }
+        }
+
+        return ['users' => $users, 'with_email' => $with, 'shared' => \count($shared)];
+    }
+
     /** @return list<array<string, mixed>> */
     private function dashboards(): array
     {
@@ -250,6 +313,16 @@ final class EndpointProbe
                 $warnings[] = 'METHODS';
                 break;
             }
+        }
+
+        $matching = $report['matching'] ?? null;
+
+        if (\is_array($matching) && $matching['users'] > 0 && $matching['with_email'] === 0) {
+            $warnings[] = 'NO_EMAILS';
+        }
+
+        if (\is_array($matching) && $matching['shared'] > 0) {
+            $warnings[] = 'SHARED_EMAILS';
         }
 
         if (str_starts_with(strtolower((string) $report['url']), 'http://')) {
