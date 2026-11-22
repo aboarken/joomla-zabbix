@@ -3,6 +3,12 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+- **Release workflow split**: tests and the package build run with read-only access, also for pull requests; only publishing (a published release, or a manual run on `main`) can write, and that job runs no code from the repository. A manual release run on another branch than `main` is refused.
+- **Dependabot** keeps the pinned GitHub Actions and the development tools up to date (pull requests to review); **SECURITY.md** explains how to report a vulnerability privately.
+
 ## [1.3.12] - 2026-11-22
 
 ### Fixed
