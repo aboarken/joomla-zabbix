@@ -54,6 +54,9 @@ final class EndpointProbe
         'settings.get'             => ['PROBLEMS', ['output' => ['severity_color_0']], false],
     ];
 
+    /** The Zabbix 7.4 API reference; "host.get" → host/get. */
+    public const DOCS = 'https://www.zabbix.com/documentation/7.4/en/manual/api/reference/';
+
     /** Inventory counts (method => language key suffix). */
     public const COUNTS = [
         'hostgroup.get' => 'HOSTGROUPS',
@@ -66,6 +69,14 @@ final class EndpointProbe
 
     public function __construct(private readonly JsonRpcClient $client)
     {
+    }
+
+    /** The method's page in the Zabbix 7.4 API documentation. */
+    public static function doc(string $method): string
+    {
+        [$object, $action] = explode('.', $method, 2) + [1 => ''];
+
+        return self::DOCS . strtolower($object) . '/' . strtolower($action);
     }
 
     /**

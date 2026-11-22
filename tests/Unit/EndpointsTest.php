@@ -99,4 +99,14 @@ final class EndpointsTest extends TestCase
         self::assertSame(['users' => 1, 'with_email' => 0, 'shared' => 0], $report['matching']);
         self::assertContains('NO_EMAILS', $report['warnings']);
     }
+
+    public function testEveryMethodLinksToItsZabbixDocumentationPage(): void
+    {
+        self::assertSame('https://www.zabbix.com/documentation/7.4/en/manual/api/reference/host/get', EndpointProbe::doc('host.get'));
+        self::assertSame('https://www.zabbix.com/documentation/7.4/en/manual/api/reference/user/checkauthentication', EndpointProbe::doc('user.checkAuthentication'));
+
+        foreach (array_keys(EndpointProbe::METHODS) as $method) {
+            self::assertMatchesRegularExpression('#/reference/[a-z]+/[a-z]+$#', EndpointProbe::doc($method));
+        }
+    }
 }

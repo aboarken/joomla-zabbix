@@ -15,6 +15,7 @@ use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\View\HtmlView as BaseHtmlView;
 use Joomla\CMS\Toolbar\ToolbarHelper;
 use ZabbixPortal\Component\Zabbix\Administrator\Controller\EndpointsController;
+use ZabbixPortal\Component\Zabbix\Administrator\Discovery\EndpointProbe;
 use ZabbixPortal\Component\Zabbix\Administrator\Support\ComponentAccess;
 
 final class HtmlView extends BaseHtmlView
@@ -36,13 +37,10 @@ final class HtmlView extends BaseHtmlView
 
         $toolbar = $this->getDocument()->getToolbar();
 
-        if ($this->configured) {
-            $toolbar->standardButton('run', 'COM_ZABBIX_ENDPOINTS_RUN')
-                ->task('endpoints.run')
-                ->icon('icon-search')
-                ->listCheck(false);
-        }
 
+        $toolbar->linkButton('settings', 'COM_ZABBIX_SUBMENU_SETTINGS')
+            ->url('index.php?option=com_zabbix&view=integrationsettings')
+            ->icon('icon-cog');
         $toolbar->linkButton('close', 'JTOOLBAR_CLOSE')
             ->url('index.php')
             ->icon('icon-times');
@@ -57,7 +55,36 @@ final class HtmlView extends BaseHtmlView
         parent::display($tpl);
     }
 
-    /** The report as text for "Copy diagnostics" (names and counts only). */
+    /**
+     * The API methods the portal calls, with their documentation page and the result of the last
+     * diagnostics (null before the first run).
+     *
+     * @return list<array{method: string, feature: string, required: bool, doc: string, result: ?array<string, mixed>}>
+     */
+    public function methods(): array
+    {
+        $results = [];
+
+        foreach ((array) ($this->report['methods'] ?? []) as $m) {
+            $results[(string) $m['method']] = $m;
+        }
+
+        $list = [];
+
+        foreach (EndpointProbe::METHODS as $method => [$feature, , $required]) {
+            $list[] = [
+                'method'   => $method,
+                'feature'  => $feature,
+                'required' => $required,
+                'doc'      => EndpointProbe::doc($method),
+                'result'   => $results[$method] ?? null,
+            ];
+        }
+
+        return $list;
+    }
+
+    /** The report as text for "Copy diagnostics" (names and counts only, and the user checked). */
     public function diagnostics(): string
     {
         if ($this->report === null || isset($this->report['error'])) {
@@ -92,6 +119,17 @@ final class HtmlView extends BaseHtmlView
         foreach ($r['dashboards'] as $d) {
             $lines[] = '  #' . $d['id'] . ' ' . $d['name'] . ' - ' . implode(', ', array_map(static fn ($t, $n) => $t . ' x' . $n, array_keys($d['widgets']), $d['widgets']))
                 . ($d['unsupported'] !== [] ? ' [not drawn: ' . implode(', ', $d['unsupported']) . ']' : '');
+        }
+
+        $m = $r['matching'] ?? null;
+        $lines[] = '';
+        $lines[] = 'Matching by e-mail: ' . (\is_array($m) ? $m['users'] . ' Zabbix users, ' . $m['with_email'] . ' with an e-mail, ' . $m['shared'] . ' sharing one' : 'users not readable');
+
+        if (isset($r['user'])) {
+            $u       = $r['user'];
+            $lines[] = 'User check "' . $u['input'] . '": ' . ($u['joomla'] === null
+                ? (($u['many'] ?? false) ? 'more than one Joomla user' : 'no Joomla user')
+                : 'Joomla ' . $u['joomla']['username'] . ' -> ' . $u['result'] . ($u['zabbix'] !== '' ? ' (Zabbix ' . $u['zabbix'] . ')' : '') . ', match by ' . $u['mode'] . ', mapping ' . $u['mapping']);
         }
 
         $lines[] = '';
