@@ -15,9 +15,9 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Identity;
  *
  * Modes (Integration Settings → User Mappings → Match by):
  *  - username_email: the same username (case-insensitive), otherwise the same e-mail address in
- *    the Zabbix user's media;
+ *    the Zabbix user's media, or as the Zabbix username;
  *  - username: only the username;
- *  - email: only the e-mail address.
+ *  - email: only the e-mail address (media or a username that is an e-mail address).
  * Two or more candidates give "ambiguous": nobody is mapped until an administrator chooses.
  */
 final class UserMatcher
@@ -59,9 +59,11 @@ final class UserMatcher
             return [self::NOT_FOUND, null];
         }
 
+        // The e-mail addresses of the user's media, or the username when it is an e-mail address
+        // (common with LDAP or SAML sign-in, e.g. Microsoft Entra ID, where users have no media).
         $found = array_values(array_filter(
             $users,
-            static fn (DirectoryUser $u): bool => \in_array($wanted, $u->emails, true)
+            static fn (DirectoryUser $u): bool => \in_array($wanted, $u->emails, true) || self::normaliseEmail($u->username) === $wanted
         ));
 
         return match (\count($found)) {

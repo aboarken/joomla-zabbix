@@ -80,6 +80,21 @@ final class IdentityTest extends TestCase
         self::assertSame('', UserMatcher::normaliseEmail('not an address'));
     }
 
+    public function testAZabbixUsernameThatIsAnEmailIsMatchedByEmail(): void
+    {
+        // LDAP / SAML users: the username is the e-mail address, and there is no media.
+        $sso   = DirectoryUser::fromApi(['userid' => '9', 'username' => 'A.Moussa@Example.edu.sa']);
+        $other = DirectoryUser::fromApi(['userid' => '10', 'username' => 'someone']);
+
+        self::assertSame([UserMatcher::MATCHED, $sso], (new UserMatcher())->match('amoussa', 'a.moussa@example.edu.sa', [$other, $sso], 'username_email'));
+        self::assertSame([UserMatcher::MATCHED, $sso], (new UserMatcher())->match('amoussa', 'a.moussa@example.edu.sa', [$other, $sso], 'email'));
+        self::assertSame([UserMatcher::NOT_FOUND, null], (new UserMatcher())->match('amoussa', 'a.moussa@example.edu.sa', [$other, $sso], 'username'));
+
+        // Media and username naming the same Zabbix user: one candidate, not ambiguous.
+        $both = DirectoryUser::fromApi(['userid' => '11', 'username' => 'b@example.com', 'medias' => [['sendto' => ['b@example.com']]]]);
+        self::assertSame([UserMatcher::MATCHED, $both], (new UserMatcher())->match('bee', 'b@example.com', [$both], 'email'));
+    }
+
     public function testDirectoryIsReadAgainAfterRefresh(): void
     {
         $transport = new FakeTransport(['user.get' => [['userid' => '1', 'username' => 'Admin']]]);

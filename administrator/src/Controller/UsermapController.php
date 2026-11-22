@@ -20,6 +20,7 @@ use Joomla\Utilities\ArrayHelper;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Identity\MappingException;
 use ZabbixPortal\Component\Zabbix\Administrator\Identity\MappingManager;
+use ZabbixPortal\Component\Zabbix\Administrator\Identity\UserMatcher;
 use ZabbixPortal\Component\Zabbix\Administrator\Model\UsermapModel;
 
 /**
@@ -112,8 +113,21 @@ final class UsermapController extends BaseController
                 $fresh = true;
             }
 
-            $user = $this->loadUser($id) ?? throw new MappingException('COM_ZABBIX_MAPPING_ERR_USER');
-            $manager->rematch($id, (string) $user->username, (string) $user->email, $this->actorId());
+            $user   = $this->loadUser($id) ?? throw new MappingException('COM_ZABBIX_MAPPING_ERR_USER');
+            $result = $manager->rematch($id, (string) $user->username, (string) $user->email, $this->actorId());
+
+            // Say what was compared, and with how many Zabbix users: few users means the API
+            // token's user may not see them all (it must be a Super admin).
+            if ($result === UserMatcher::NOT_FOUND || $result === UserMatcher::AMBIGUOUS) {
+                $this->app->enqueueMessage(Text::sprintf(
+                    $result === UserMatcher::NOT_FOUND ? 'COM_ZABBIX_MAPPING_REMATCH_NOT_FOUND' : 'COM_ZABBIX_MAPPING_REMATCH_AMBIGUOUS',
+                    $this->escape((string) $user->name),
+                    $this->escape((string) $user->username),
+                    $this->escape((string) $user->email),
+                    \count($this->component()->getUserDirectory()->all()),
+                    Text::_('COM_ZABBIX_SETTINGS_MATCH_' . strtoupper($this->component()->getSettingsRepository()->load()->matchMode()))
+                ), 'warning');
+            }
         }, 'COM_ZABBIX_MAPPING_N_REMATCHED');
     }
 
