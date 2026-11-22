@@ -1,0 +1,19 @@
+# Dependabot opens a pull request when an action the workflows use (pinned to a commit) or a
+# development tool in composer.json has a new version. Nothing is merged without review.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: composer
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      dev-tools:
+        patterns: ["*"]
