@@ -13,8 +13,8 @@ use Joomla\CMS\Router\Route;
 /** @var \ZabbixPortal\Component\Zabbix\Administrator\View\Endpoints\HtmlView $this */
 
 // Laid out as the ServiceDesk Plus component's Find Endpoints: the form, then after a run the
-// warnings, the Server and API token cards, the methods the portal uses, the user check, the
-// report, and under "Advanced" the dashboards and their widgets.
+// warnings, the Server and API token cards, the methods the portal uses, what the token sees, the
+// dashboards and their widgets, the user check, and the report to download.
 $action = Route::_('index.php?option=com_zabbix&view=endpoints');
 $r      = $this->report;
 $ok     = $r !== null && !isset($r['error']);
@@ -199,53 +199,14 @@ $badge  = ['allowed' => 'bg-success', 'denied' => 'bg-danger', 'error' => 'bg-wa
             </div>
         </section>
 
-        <?php if (isset($r['user'])) :
-            $u = $r['user']; ?>
-            <section class="card mb-3">
-                <div class="card-body">
-                    <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_CHECK'); ?></h2>
-                    <?php if ($u['joomla'] === null) : ?>
-                        <p class="mb-0 text-danger"><?php echo Text::sprintf(($u['many'] ?? false) ? 'COM_ZABBIX_ENDPOINTS_USER_MANY' : 'COM_ZABBIX_ENDPOINTS_USER_NONE', $e((string) $u['input'])); ?></p>
-                    <?php else : ?>
-                        <dl class="row mb-0">
-                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_JOOMLA'); ?></dt>
-                            <dd class="col-sm-7"><?php echo $e($u['joomla']['name']); ?> (<?php echo $e($u['joomla']['username']); ?>, <?php echo $e($u['joomla']['email']); ?>)</dd>
-                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_SETTINGS_MATCH_MODE'); ?></dt>
-                            <dd class="col-sm-7"><?php echo Text::_('COM_ZABBIX_SETTINGS_MATCH_' . strtoupper((string) $u['mode'])); ?></dd>
-                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_RESULT'); ?></dt>
-                            <dd class="col-sm-7 <?php echo $u['result'] === 'matched' ? '' : 'text-danger'; ?>">
-                                <?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_' . strtoupper((string) $u['result'])); ?><?php echo $u['zabbix'] !== '' ? ': ' . Text::sprintf('COM_ZABBIX_ENDPOINTS_USER_ZABBIX', $e((string) $u['zabbix'])) : ''; ?>
-                            </dd>
-                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_MAPPING'); ?></dt>
-                            <dd class="col-sm-7"><?php echo Text::_('COM_ZABBIX_MAPSTATUS_' . strtoupper((string) $u['mapping'])); ?><?php echo $u['mapped'] !== '' ? ' (' . $e((string) $u['mapped']) . ')' : ''; ?>
-                                · <a href="<?php echo Route::_('index.php?option=com_zabbix&view=usermap&layout=edit&id=' . (int) $u['joomla']['id']); ?>"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_OPEN'); ?></a></dd>
-                        </dl>
-                    <?php endif; ?>
-                </div>
-            </section>
-        <?php endif; ?>
-
-        <section class="card mb-3" id="zbx-diag">
+        <section class="card mb-3">
             <div class="card-body">
-                <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DIAGNOSTICS'); ?></h2>
-                <textarea id="zbx-diagnostics" class="form-control font-monospace small" rows="12" readonly aria-label="<?php echo $e(Text::_('COM_ZABBIX_ENDPOINTS_DIAGNOSTICS')); ?>"><?php echo $e($this->diagnostics()); ?></textarea>
-                <button type="button" class="btn btn-secondary mt-2" data-zbx-copy="#zbx-diagnostics"
-                        data-zbx-copied="<?php echo $e(Text::_('COM_ZABBIX_ENDPOINTS_COPIED')); ?>">
-                    <span class="icon-copy" aria-hidden="true"></span> <?php echo Text::_('COM_ZABBIX_ENDPOINTS_COPY'); ?>
-                </button>
-                <p class="small text-muted mt-2 mb-0"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DIAG_PRIVACY'); ?></p>
-            </div>
-        </section>
-
-        <details class="card mb-3" id="zbx-advanced">
-            <summary class="card-header h5 mb-0"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_ADVANCED'); ?></summary>
-            <div class="card-body">
-                <h3 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DASHBOARDS'); ?></h3>
+                <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DASHBOARDS'); ?></h2>
                 <?php if ($r['dashboards'] === []) : ?>
                     <p class="text-muted mb-0"><?php echo Text::_('COM_ZABBIX_ACCESS_NO_DASHBOARDS'); ?></p>
                 <?php else : ?>
                     <div class="table-responsive">
-                        <table class="table table-striped table-sm align-middle">
+                        <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
                                     <th scope="col">ID</th>
@@ -276,6 +237,45 @@ $badge  = ['allowed' => 'bg-success', 'denied' => 'bg-danger', 'error' => 'bg-wa
                     <p class="small text-muted mb-0"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_WIDGETS_NOTE'); ?></p>
                 <?php endif; ?>
             </div>
-        </details>
+        </section>
+
+        <?php if (isset($r['user'])) :
+            $u = $r['user']; ?>
+            <section class="card mb-3">
+                <div class="card-body">
+                    <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_CHECK'); ?></h2>
+                    <?php if ($u['joomla'] === null) : ?>
+                        <p class="mb-0 text-danger"><?php echo Text::sprintf(($u['many'] ?? false) ? 'COM_ZABBIX_ENDPOINTS_USER_MANY' : 'COM_ZABBIX_ENDPOINTS_USER_NONE', $e((string) $u['input'])); ?></p>
+                    <?php else : ?>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_JOOMLA'); ?></dt>
+                            <dd class="col-sm-7"><?php echo $e($u['joomla']['name']); ?> (<?php echo $e($u['joomla']['username']); ?>, <?php echo $e($u['joomla']['email']); ?>)</dd>
+                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_SETTINGS_MATCH_MODE'); ?></dt>
+                            <dd class="col-sm-7"><?php echo Text::_('COM_ZABBIX_SETTINGS_MATCH_' . strtoupper((string) $u['mode'])); ?></dd>
+                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_RESULT'); ?></dt>
+                            <dd class="col-sm-7 <?php echo $u['result'] === 'matched' ? '' : 'text-danger'; ?>">
+                                <?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_' . strtoupper((string) $u['result'])); ?><?php echo $u['zabbix'] !== '' ? ': ' . Text::sprintf('COM_ZABBIX_ENDPOINTS_USER_ZABBIX', $e((string) $u['zabbix'])) : ''; ?>
+                            </dd>
+                            <dt class="col-sm-5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_MAPPING'); ?></dt>
+                            <dd class="col-sm-7"><?php echo Text::_('COM_ZABBIX_MAPSTATUS_' . strtoupper((string) $u['mapping'])); ?><?php echo $u['mapped'] !== '' ? ' (' . $e((string) $u['mapped']) . ')' : ''; ?>
+                                · <a href="<?php echo Route::_('index.php?option=com_zabbix&view=usermap&layout=edit&id=' . (int) $u['joomla']['id']); ?>"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_USER_OPEN'); ?></a></dd>
+                        </dl>
+                    <?php endif; ?>
+                </div>
+            </section>
+        <?php endif; ?>
+
+        <section class="card mb-3" id="zbx-diag">
+            <div class="card-body">
+                <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DIAGNOSTICS'); ?></h2>
+                <textarea id="zbx-diagnostics" class="form-control font-monospace small" rows="12" readonly aria-label="<?php echo $e(Text::_('COM_ZABBIX_ENDPOINTS_DIAGNOSTICS')); ?>"><?php echo $e($this->diagnostics()); ?></textarea>
+                <button type="button" class="btn btn-secondary mt-2" data-zbx-download="#zbx-diagnostics"
+                        data-zbx-filename="zabbix-diagnostics-<?php echo $e(HTMLHelper::_('date', '@' . (int) $r['at'], 'Ymd-Hi')); ?>.txt">
+                    <span class="icon-download" aria-hidden="true"></span> <?php echo Text::_('COM_ZABBIX_ENDPOINTS_DOWNLOAD'); ?>
+                </button>
+                <p class="small text-muted mt-2 mb-0"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_DIAG_PRIVACY'); ?></p>
+            </div>
+        </section>
+
     <?php endif; ?>
 </div>

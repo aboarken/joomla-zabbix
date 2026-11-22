@@ -92,7 +92,7 @@ final class HtmlView extends BaseHtmlView
         return $list;
     }
 
-    /** The report as text for "Copy diagnostics" (names and counts only, and the user checked). */
+    /** The report as text for "Download report" (names and counts only, and the user checked). */
     public function diagnostics(): string
     {
         if ($this->report === null || isset($this->report['error'])) {

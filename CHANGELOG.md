@@ -3,6 +3,12 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.16] - 2026-11-23
+
+### Changed
+- **Find Endpoints → Download report** replaces *Copy report*: the diagnostics report is saved as a text file (`zabbix-diagnostics-<date>-<time>.txt`), made in the browser from the report on the page.
+- **Find Endpoints → Dashboards and their widgets** is always shown after a run, after *What the token sees* (was hidden under *Advanced*).
+
 ## [1.3.15] - 2026-11-23
 
 ### Changed
