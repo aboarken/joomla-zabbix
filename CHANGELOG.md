@@ -3,6 +3,13 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.11] - 2026-11-22
+
+### Fixed
+- **Users whose Zabbix e-mail has a display name were not matched.** Zabbix accepts *Send to* addresses such as `Ahmed Moussa <a.moussa@example.com>`; the portal skipped them, so the user stayed *Not found* although the e-mail addresses were the same. The address in angle brackets is used now, and international addresses are accepted too.
+- **Rematch reads Zabbix's users afresh**, so a user just added in Zabbix, or just given an e-mail there, is found at once instead of after the cache time.
+- **Options page title**: *Zabbix: Options* instead of `COM_ZABBIX_CONFIGURATION`. All language strings were checked; a test now fails if one is missing.
+
 ## [1.3.10] - 2026-11-20
 
 ### Removed

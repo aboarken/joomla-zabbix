@@ -38,9 +38,12 @@ final class DirectoryUser
         $emails = [];
 
         foreach ((array) ($row['medias'] ?? []) as $media) {
+            // An e-mail media's "Send to" is a list of addresses; a text field for other media.
             foreach ((array) (\is_array($media) ? ($media['sendto'] ?? []) : []) as $to) {
-                if (\is_string($to) && filter_var(trim($to), FILTER_VALIDATE_EMAIL)) {
-                    $emails[] = strtolower(trim($to));
+                $address = \is_string($to) ? UserMatcher::normaliseEmail($to) : '';
+
+                if ($address !== '') {
+                    $emails[] = $address;
                 }
             }
         }

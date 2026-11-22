@@ -102,7 +102,16 @@ final class UsermapController extends BaseController
 
     public function rematch(): void
     {
-        $this->forEachSelected(function (int $id, MappingManager $manager): void {
+        $fresh = false;
+
+        $this->forEachSelected(function (int $id, MappingManager $manager) use (&$fresh): void {
+            // Once, after the token and permission checks: match against Zabbix's users as they
+            // are now, not as cached (a user just added, or given an e-mail, in Zabbix).
+            if (!$fresh) {
+                $this->component()->getUserDirectory()->refresh();
+                $fresh = true;
+            }
+
             $user = $this->loadUser($id) ?? throw new MappingException('COM_ZABBIX_MAPPING_ERR_USER');
             $manager->rematch($id, (string) $user->username, (string) $user->email, $this->actorId());
         }, 'COM_ZABBIX_MAPPING_N_REMATCHED');

@@ -39,6 +39,13 @@ final class ZabbixUserDirectory implements UserDirectoryInterface
         return $this->load()[$userid] ?? null;
     }
 
+    /** Read the users from Zabbix again on next use (e.g. before Rematch). */
+    public function refresh(): void
+    {
+        $this->users = null;
+        $this->cache->set(0, 'directory', []);
+    }
+
     /** @return array<string, DirectoryUser> */
     private function load(): array
     {
@@ -48,6 +55,7 @@ final class ZabbixUserDirectory implements UserDirectoryInterface
 
         $rows = $this->cache->get(0, 'directory');
 
+        // [] = no users, or a refresh asked for: read them from Zabbix.
         if ($rows === null || $rows === []) {
             $result = $this->client->call('user.get', [
                 'output'        => ['userid', 'username', 'name', 'surname'],
