@@ -38,6 +38,14 @@ final class HtmlView extends BaseHtmlView
         $toolbar = $this->getDocument()->getToolbar();
 
 
+        if ($this->configured) {
+            // Submits the page's form (adminForm), so the Joomla user to check is sent too.
+            $toolbar->standardButton('run', 'COM_ZABBIX_ENDPOINTS_RUN')
+                ->task('endpoints.run')
+                ->icon('icon-search')
+                ->listCheck(false);
+        }
+
         $toolbar->linkButton('settings', 'COM_ZABBIX_SUBMENU_SETTINGS')
             ->url('index.php?option=com_zabbix&view=integrationsettings')
             ->icon('icon-cog');
