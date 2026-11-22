@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.15] - 2026-11-23
+
+### Changed
+- **Find Endpoints**: less space between the **Server** and **API token** cards (1rem, was 1.5rem), the same as between the cards below them.
+
 ## [1.3.14] - 2026-11-23
 
 ### Changed
