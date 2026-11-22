@@ -3,6 +3,14 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.12] - 2026-11-22
+
+### Fixed
+- **Users whose Zabbix username is their e-mail address are matched by e-mail.** With LDAP or SAML sign-in (e.g. Microsoft Entra ID) the Zabbix username is often the e-mail address and the user has no e-mail media; such users stayed *Not found*. Matching by e-mail now also compares the Zabbix username when it is an e-mail address.
+
+### Added
+- **Rematch says why a user was not found** (or why more than one Zabbix user fits): the Joomla username and e-mail compared, the *Match by* setting, and how many Zabbix users the API token sees. Few users means the token's user is not a Super admin.
+
 ## [1.3.11] - 2026-11-22
 
 ### Fixed
