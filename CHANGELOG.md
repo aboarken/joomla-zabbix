@@ -3,7 +3,15 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.13] - 2026-11-23
+
+### Changed
+- **Find Endpoints is no longer empty before a run.** The page shows at once what it checks: a **Diagnostics** box with *Run diagnostics* (the button moved from the toolbar into the page), and the list of **API methods the portal uses**, each with what it is used for, whether it is optional and a link to its page in the Zabbix 7.4 API documentation; the results fill in after a run. The toolbar has a link to Integration Settings.
+
+### Added
+- **Diagnostics → Joomla user to check (optional)**: enter a username or e-mail to see which Zabbix user that Joomla user is matched to now (with the *Match by* setting and Zabbix's users read afresh), and their stored mapping, with a link to it in User Mappings.
+- **Find Endpoints → Matching users by e-mail**: how many Zabbix users the token sees, how many have an e-mail address (in their media, or as username, as with LDAP or SAML sign-in), and how many share an address with another user. Warnings when no Zabbix user has an address (users can only be matched by username or by hand) and when addresses are shared (those users are *Ambiguous*, never matched automatically). Counts only: no addresses in the page or in *Copy diagnostics*.
+- **Find Endpoints checks `template.get`** (optional), used by the *System information* widget.
 
 ### Security
 - **Release workflow split**: tests and the package build run with read-only access, also for pull requests; only publishing (a published release, or a manual run on `main`) can write, and that job runs no code from the repository. A manual release run on another branch than `main` is refused.
