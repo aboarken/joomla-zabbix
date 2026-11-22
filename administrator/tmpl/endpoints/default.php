@@ -64,8 +64,9 @@ $badge  = ['allowed' => 'bg-success', 'denied' => 'bg-danger', 'error' => 'bg-wa
             <div class="alert alert-warning"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_WARN_' . $warning); ?></div>
         <?php endforeach; ?>
 
-        <div class="row">
-            <div class="col-lg-6 mb-3">
+        <?php // 1rem between the two cards, the same as between the cards below them. ?>
+        <div class="row g-3 mb-3">
+            <div class="col-lg-6">
                 <section class="card h-100">
                     <div class="card-body">
                         <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_SERVER'); ?></h2>
@@ -92,7 +93,7 @@ $badge  = ['allowed' => 'bg-success', 'denied' => 'bg-danger', 'error' => 'bg-wa
                     </div>
                 </section>
             </div>
-            <div class="col-lg-6 mb-3">
+            <div class="col-lg-6">
                 <section class="card h-100">
                     <div class="card-body">
                         <h2 class="h5"><?php echo Text::_('COM_ZABBIX_ENDPOINTS_TOKEN'); ?></h2>
