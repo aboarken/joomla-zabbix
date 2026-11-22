@@ -13,6 +13,9 @@ use ZabbixPortal\Component\Zabbix\Administrator\Identity\MappingException;
 use ZabbixPortal\Component\Zabbix\Administrator\Identity\MappingManager;
 use ZabbixPortal\Component\Zabbix\Administrator\Identity\UserMapping;
 use ZabbixPortal\Component\Zabbix\Administrator\Identity\UserMatcher;
+use ZabbixPortal\Component\Zabbix\Administrator\Identity\ZabbixUserDirectory;
+use ZabbixPortal\Component\Zabbix\Administrator\Cache\MemoryCache;
+use ZabbixPortal\Component\Zabbix\Tests\Support\FakeTransport;
 use ZabbixPortal\Component\Zabbix\Tests\Support\ArrayDirectory;
 use ZabbixPortal\Component\Zabbix\Tests\Support\ArrayLogger;
 use ZabbixPortal\Component\Zabbix\Tests\Support\MemoryAudit;
@@ -57,6 +60,40 @@ final class IdentityTest extends TestCase
         self::assertSame(UserMatcher::NOT_FOUND, $m->match('someone', 'alice@example.org', $users, 'username')[0]);
         self::assertSame(UserMatcher::NOT_FOUND, $m->match('alice', 'nobody@example.org', $users, 'email')[0]);
         self::assertSame('4', $m->match('x', 'carol@example.org', $users, 'email')[1]?->userid);
+    }
+
+    public function testEmailsWithADisplayNameAreMatched(): void
+    {
+        // Zabbix accepts "Name <address>" in an e-mail media's Send to.
+        $user = DirectoryUser::fromApi([
+            'userid' => '7', 'username' => 'amoussa',
+            'medias' => [
+                ['mediatypeid' => '1', 'sendto' => ['Ahmed Moussa <A.Moussa@Example.edu.sa>', ' second@example.com ']],
+                ['mediatypeid' => '3', 'sendto' => '+966500000000'],
+            ],
+        ]);
+
+        self::assertSame(['a.moussa@example.edu.sa', 'second@example.com'], $user->emails);
+        self::assertSame([UserMatcher::MATCHED, $user], (new UserMatcher())->match('ahmed', 'a.moussa@example.edu.sa', [$user], 'username_email'));
+        self::assertSame('a.moussa@example.edu.sa', UserMatcher::normaliseEmail('  "Moussa, Ahmed" <a.moussa@example.edu.sa> '));
+        self::assertSame('dépôt@exemple.fr', UserMatcher::normaliseEmail('Dépôt@Exemple.fr'));
+        self::assertSame('', UserMatcher::normaliseEmail('not an address'));
+    }
+
+    public function testDirectoryIsReadAgainAfterRefresh(): void
+    {
+        $transport = new FakeTransport(['user.get' => [['userid' => '1', 'username' => 'Admin']]]);
+        $cache     = new MemoryCache();
+
+        (new ZabbixUserDirectory($transport->client(), $cache))->all();
+        (new ZabbixUserDirectory($transport->client(), $cache))->all();
+        self::assertSame(['user.get'], $transport->methods(), 'cached');
+
+        $transport->routes['user.get'] = [['userid' => '1', 'username' => 'Admin'], ['userid' => '2', 'username' => 'new.user']];
+        $directory = new ZabbixUserDirectory($transport->client(), $cache);
+        $directory->refresh();
+
+        self::assertNotNull($directory->find('2'), 'a user just added in Zabbix is found after a refresh (Rematch)');
     }
 
     public function testFirstVisitMatchesAndStoresAnActiveMapping(): void

@@ -71,10 +71,21 @@ final class UserMatcher
         };
     }
 
+    /**
+     * The address in lower case, or '' when it is not one. Zabbix also accepts an address with a
+     * display name, "Ahmed Moussa <a.moussa@example.com>" (CEmailValidator); the address in
+     * angle brackets is used. International addresses (e.g. "dépôt@exemple.fr") are accepted.
+     */
     public static function normaliseEmail(string $email): string
     {
-        $email = strtolower(trim($email));
+        $email = trim($email);
 
-        return filter_var($email, FILTER_VALIDATE_EMAIL) ? $email : '';
+        if (preg_match('/<([^<>]+)>\s*$/u', $email, $m) === 1) {
+            $email = trim($m[1]);
+        }
+
+        $email = mb_strtolower($email);
+
+        return filter_var($email, FILTER_VALIDATE_EMAIL, FILTER_FLAG_EMAIL_UNICODE) !== false ? $email : '';
     }
 }
