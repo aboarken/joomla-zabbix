@@ -48,7 +48,23 @@ final class EndpointsController extends BaseController
 
         try {
             $settings = $this->component()->getSettingsRepository()->load();
-            $report   = $this->component()->getEndpointProbe()->run() + ['via' => $settings->connectVia()];
+            $options  = $settings->transportOptions();
+            $report   = $this->component()->getEndpointProbe()->run() + [
+                'via'    => $settings->connectVia(),
+                // Server and API token cards: the settings the run used (no secrets).
+                'server' => [
+                    'https'   => str_starts_with(strtolower($settings->apiUrl()), 'https://'),
+                    'tls'     => !$options->verifyTls ? 'off' : ($options->caBundle !== '' ? 'custom' : 'verified'),
+                    'timeout' => $options->timeout,
+                    'connect' => $options->connectTimeout,
+                ],
+                'portal' => [
+                    'auto'    => $settings->autoMatch(),
+                    'mode'    => $settings->matchMode(),
+                    'approve' => $settings->autoApprove(),
+                    'cache'   => intdiv($settings->cacheTtl(), 60),
+                ],
+            ];
             $who      = mb_substr(trim($this->input->post->getString('user', '')), 0, 150);
 
             if ($who !== '') {

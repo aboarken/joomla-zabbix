@@ -3,6 +3,11 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.3.14] - 2026-11-23
+
+### Changed
+- **Find Endpoints looks like the ServiceDesk Plus component's.** The *Joomla user to check* field and **Find Endpoints** at the top (also in the toolbar again, with Integration Settings, Close and Options); after a run, the warnings, then the **Server** card (API address, certificate check, Connect via, Zabbix version, timeouts, response time) and the **API token** card (status, user, role, API access, Match by, New users, cache) side by side, the **API methods the portal uses** with links to the Zabbix API documentation, **What the token sees**, the **User check**, and the **Diagnostics report** with *Copy report*. Dashboards and their widgets are under **Advanced**, closed until opened.
+
 ## [1.3.13] - 2026-11-23
 
 ### Changed
