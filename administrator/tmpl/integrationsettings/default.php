@@ -48,6 +48,10 @@ $test = $this->test;
         <div class="alert alert-info"><?php echo Text::sprintf('COM_ZABBIX_SETTINGS_HINT_ENV_SECRET', SecretProvider::ENV_NAME, SecretProvider::MIN_ENV_LENGTH); ?></div>
     <?php endif; ?>
 
+    <?php if ($this->openRegistration) : ?>
+        <div class="alert alert-warning"><?php echo Text::_('COM_ZABBIX_SETTINGS_WARN_OPEN_REGISTRATION'); ?></div>
+    <?php endif; ?>
+
     <?php if (str_starts_with(strtolower($this->apiUrl), 'http://')) : ?>
         <div class="alert alert-warning"><?php echo Text::_('COM_ZABBIX_SETTINGS_WARN_HTTP'); ?></div>
     <?php elseif ($this->apiUrl !== '' && !$this->verifiesTls) : ?>

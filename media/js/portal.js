@@ -182,7 +182,19 @@
     SEVERITY_COLOURS.forEach((colour, i) => root.style.setProperty(`--zbx-sev-${i}`, colour));
   });
 
-  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName, severityColour };
+  /** Ends a fetch that hangs (30 s by default): an AbortSignal, also in browsers without AbortSignal.timeout(). */
+  const timeoutSignal = (ms = 30000) => {
+    if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.timeout === 'function') {
+      return AbortSignal.timeout(ms);
+    }
+
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), ms);
+
+    return controller.signal;
+  };
+
+  window.ZabbixPortal = { t, el, format, parts, makeFormatter, duration, number, severityName, severityColour, timeoutSignal };
 
   // Filters that apply as soon as an option is chosen.
   document.addEventListener('change', (event) => {

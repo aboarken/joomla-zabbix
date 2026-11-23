@@ -10,6 +10,7 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\View\Integrationsettings;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Form\Form;
 use Joomla\CMS\Language\Text;
@@ -32,6 +33,12 @@ final class HtmlView extends BaseHtmlView
 
     public bool $verifiesTls = true;
 
+    /**
+     * Joomla allows anyone to register while new users are matched and approved automatically: a
+     * newcomer could pick the username or e-mail of a Zabbix user who has not used the portal yet.
+     */
+    public bool $openRegistration = false;
+
     /** Connect via as "host:port", or ''. */
     public string $connectVia = '';
 
@@ -51,6 +58,8 @@ final class HtmlView extends BaseHtmlView
         $this->apiUrl            = $settings->apiUrl();
         $this->verifiesTls       = $settings->verifiesTls();
         $this->connectVia        = $settings->connectVia();
+        $this->openRegistration  = $settings->autoMatch() && $settings->autoApprove()
+            && (int) ComponentHelper::getParams('com_users')->get('allowUserRegistration', 0) === 1;
         $test                    = Factory::getApplication()->getUserState(SettingsController::STATE_TEST);
         $this->test              = \is_array($test) ? $test : null;
 

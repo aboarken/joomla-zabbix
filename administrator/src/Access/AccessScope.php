@@ -38,8 +38,46 @@ final class AccessScope
         public readonly array $readGroupIds = [],
         public readonly array $deniedGroupIds = [],
         public readonly array $userGroupIds = [],
-        public readonly bool $disabled = false
+        public readonly bool $disabled = false,
+        public readonly array $tagFilters = []
     ) {
+    }
+
+    /**
+     * Tag-based permissions, as Zabbix's problem.get applies them (CProblem::addTagFilterSqlParts):
+     * when the user's groups have tag filters, a problem is shown only if one of the host groups of
+     * its hosts has full access (a filter with an empty tag) or a filter its tags match (tag, and
+     * value unless the filter's value is empty). Without tag filters nothing is restricted.
+     *
+     * @param  list<string>                                  $hostGroupIds  groups of the problem's hosts
+     * @param  list<array{tag: string, value: string}>        $tags          the problem's tags
+     */
+    public function allowsTags(array $hostGroupIds, array $tags): bool
+    {
+        if ($this->disabled) {
+            return false;
+        }
+
+        if ($this->all() || $this->tagFilters === []) {
+            return true;
+        }
+
+        foreach (array_unique(array_map('strval', $hostGroupIds)) as $groupId) {
+            foreach ($this->tagFilters[$groupId] ?? [] as $filter) {
+                if ($filter['tag'] === '') {
+                    return true;
+                }
+
+                foreach ($tags as $tag) {
+                    if ((string) ($tag['tag'] ?? '') === $filter['tag']
+                        && ($filter['value'] === '' || (string) ($tag['value'] ?? '') === $filter['value'])) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /** Sees every host group (super admin). */
@@ -164,6 +202,7 @@ final class AccessScope
             'denied'   => $this->deniedGroupIds,
             'groups'   => $this->userGroupIds,
             'disabled' => $this->disabled,
+            'tags'     => $this->tagFilters,
         ];
     }
 
@@ -179,7 +218,26 @@ final class AccessScope
             $list($data['read'] ?? []),
             $list($data['denied'] ?? []),
             $list($data['groups'] ?? []),
-            (bool) ($data['disabled'] ?? false)
+            (bool) ($data['disabled'] ?? false),
+            self::tagFiltersFrom($data['tags'] ?? [])
         );
+    }
+
+    /**
+     * @return array<string, list<array{tag: string, value: string}>>
+     */
+    public static function tagFiltersFrom(mixed $data): array
+    {
+        $filters = [];
+
+        foreach (\is_array($data) ? $data : [] as $groupId => $list) {
+            foreach (\is_array($list) ? $list : [] as $filter) {
+                if (\is_array($filter)) {
+                    $filters[(string) $groupId][] = ['tag' => (string) ($filter['tag'] ?? ''), 'value' => (string) ($filter['value'] ?? '')];
+                }
+            }
+        }
+
+        return $filters;
     }
 }

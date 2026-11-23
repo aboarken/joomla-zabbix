@@ -17,25 +17,47 @@
       return;
     }
 
-    const cfg = JSON.parse(configNode.textContent);
+    let cfg;
+
+    try {
+      cfg = JSON.parse(configNode.textContent);
+    } catch (e) {
+      return;
+    }
+
     const fmt = P.makeFormatter(cfg.format);
     const box = document.querySelector('[data-zbx-host-chart]');
     const body = box?.querySelector('[data-zbx-chart-body]');
     const title = box?.querySelector('[data-zbx-chart-title]');
     const period = box?.querySelector('[data-zbx-host-period]');
     let itemId = null;
+    // Only the newest chart request is drawn: a slower answer for the item or period chosen before
+    // is cancelled, so a chart never shows another item's data under this item's title.
+    let seq = 0;
+    let pending = null;
 
     const draw = async () => {
       if (!itemId || !body) {
         return;
       }
 
+      seq += 1;
+      const my = seq;
+      pending?.abort();
+      pending = new AbortController();
+      const timeout = P.timeoutSignal();
+      timeout.addEventListener('abort', () => pending?.abort(), { once: true });
+
       body.replaceChildren(P.el('p', { class: 'zbx-loading', text: P.t('COM_ZABBIX_JS_LOADING', 'Loading…') }));
 
       try {
         const url = `${cfg.endpoint}&host=${encodeURIComponent(cfg.host)}&item=${encodeURIComponent(itemId)}&period=${encodeURIComponent(period.value)}`;
-        const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token } });
+        const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token }, signal: pending.signal });
         const json = await res.json();
+
+        if (my !== seq) {
+          return;
+        }
 
         if (!res.ok || json.error) {
           throw new Error(json.error || 'error');
@@ -43,6 +65,10 @@
 
         C.line(body, json.data.series, { formatter: fmt });
       } catch (e) {
+        if (my !== seq) {
+          return;
+        }
+
         body.replaceChildren(P.el('p', { class: 'zbx-error-text', role: 'alert', text: P.t('COM_ZABBIX_JS_ERROR', 'The data could not be loaded.') }));
       }
     };
@@ -54,13 +80,16 @@
         itemId = button.dataset.zbxGraph;
         title.textContent = button.dataset.zbxGraphTitle || '';
         box.hidden = false;
-        box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        const still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        box.scrollIntoView({ behavior: still ? 'auto' : 'smooth', block: 'nearest' });
         draw();
       }
 
       if (event.target.closest('[data-zbx-chart-close]') && box) {
         box.hidden = true;
         itemId = null;
+        seq += 1;
+        pending?.abort();
       }
     });
 

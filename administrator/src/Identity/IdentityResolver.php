@@ -106,8 +106,14 @@ final class IdentityResolver
             return new Identity($joomlaUserId, $mapping);
         }
 
-        [$result, $user] = (new UserMatcher())->match($username, $email, $this->directory()->all(), $this->matchMode);
+        [$result, $user] = (new UserMatcher())->matchFor($joomlaUserId, $username, $email, $this->directory()->all(), $this->matchMode, $this->repository);
         $pending         = $result === UserMatcher::MATCHED && !$this->autoApprove;
+
+        // A protected Zabbix user (Super admin, or linked to someone else) is not linked.
+        if ($result === UserMatcher::PROTECTED) {
+            $this->audit->record($joomlaUserId, 'identity.protected', AuditLogInterface::RESULT_OK, 'zabbix_user:' . $user?->userid);
+            $user = null;
+        }
 
         $mapping = new UserMapping(
             $joomlaUserId,

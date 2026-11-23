@@ -10,6 +10,7 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Controller;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use Joomla\CMS\Component\ComponentHelper;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\MVC\Controller\BaseController;
@@ -67,6 +68,11 @@ final class EndpointsController extends BaseController
             ];
             $who      = mb_substr(trim($this->input->post->getString('user', '')), 0, 150);
 
+            if ($settings->autoMatch() && $settings->autoApprove()
+                && (int) ComponentHelper::getParams('com_users')->get('allowUserRegistration', 0) === 1) {
+                $report['warnings'][] = 'OPEN_REGISTRATION';
+            }
+
             if ($who !== '') {
                 $report['user'] = $this->userCheck($who, $settings->matchMode());
             }
@@ -98,7 +104,7 @@ final class EndpointsController extends BaseController
     private function userCheck(string $who, string $mode): array
     {
         $db    = Factory::getContainer()->get(DatabaseInterface::class);
-        $query = $db->getQuery(true)
+        $query = $db->createQuery()
             ->select($db->quoteName(['id', 'name', 'username', 'email']))
             ->from($db->quoteName('#__users'))
             ->where($db->quoteName('username') . ' = :username OR ' . $db->quoteName('email') . ' = :email')
@@ -114,7 +120,7 @@ final class EndpointsController extends BaseController
         $joomla    = $rows[0];
         $directory = $this->component()->getUserDirectory();
         $directory->refresh();
-        [$result, $user] = (new UserMatcher())->match((string) $joomla['username'], (string) $joomla['email'], $directory->all(), $mode);
+        [$result, $user] = (new UserMatcher())->matchFor((int) $joomla['id'], (string) $joomla['username'], (string) $joomla['email'], $directory->all(), $mode, $this->component()->getUserMapRepository());
         $mapping   = $this->component()->getUserMapRepository()->find((int) $joomla['id']);
 
         return [

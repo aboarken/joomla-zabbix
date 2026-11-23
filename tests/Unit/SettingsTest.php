@@ -48,11 +48,62 @@ final class SettingsTest extends TestCase
         $values = self::validator()->validate(self::form(['api_token' => self::TOKEN]), new Settings());
         self::assertSame('enc(api-token:' . self::TOKEN . ')', $values['api_token_enc']);
 
-        $values = self::validator()->validate(self::form(), new Settings(['api_token_enc' => 'old']));
+        $values = self::validator()->validate(self::form(), new Settings(['api_token_enc' => 'old', 'zabbix_url' => 'https://zabbix.example.org']));
         self::assertArrayNotHasKey('api_token_enc', $values);
 
         $values = self::validator()->validate(self::form(['clear_api_token' => '1', 'zabbix_url' => '']), new Settings(['api_token_enc' => 'old']));
         self::assertSame('', $values['api_token_enc']);
+    }
+
+    public function testTheStoredTokenIsNotSentToANewDestinationWithoutEnteringItAgain(): void
+    {
+        $stored = new Settings(['api_token_enc' => 'old', 'zabbix_url' => 'https://zabbix.example.org', 'verify_tls' => '1']);
+
+        foreach ([
+            'address'      => ['zabbix_url' => 'https://attacker.example.net'],
+            'port'         => ['zabbix_port' => '8443'],
+            'connect via'  => ['connect_via' => '203.0.113.7'],
+            'tls off'      => ['verify_tls' => '0'],
+            'ca bundle'    => ['ca_bundle' => '/etc/ca.pem'],
+        ] as $case => $change) {
+            try {
+                self::validator()->validate(self::form($change), $stored);
+                self::fail($case . ': the stored token would be sent to a new destination');
+            } catch (ValidationFailed $e) {
+                self::assertContains('COM_ZABBIX_SETTINGS_ERR_TOKEN_AGAIN', $e->getKeys(), $case);
+            }
+
+            // With the token entered again, the change is accepted.
+            $values = self::validator()->validate(self::form($change + ['api_token' => self::TOKEN]), $stored);
+            self::assertSame('enc(api-token:' . self::TOKEN . ')', $values['api_token_enc'], $case);
+        }
+
+        // Other settings can change without the token.
+        $values = self::validator()->validate(self::form(['cache_minutes' => '10', 'zabbix_url' => 'https://zabbix.example.org/']), $stored);
+        self::assertArrayNotHasKey('api_token_enc', $values);
+        self::assertSame(['zabbix_url', 'connect_via'], SettingsValidator::destinationChanges($stored, new Settings(['zabbix_url' => 'https://other.example.org', 'connect_via' => '10.0.0.1'])));
+    }
+
+    public function testCaBundleMustBeAPemCertificateFile(): void
+    {
+        $dir = sys_get_temp_dir() . '/zbx-ca-' . bin2hex(random_bytes(4));
+        mkdir($dir);
+        file_put_contents($dir . '/secret.txt', 'DB_PASSWORD=x');
+        file_put_contents($dir . '/fake.pem', 'not a certificate');
+
+        self::assertFalse(SettingsValidator::isCaBundle($dir . '/secret.txt'), 'other files are refused (no file probing)');
+        self::assertFalse(SettingsValidator::isCaBundle($dir . '/fake.pem'), 'a .pem without a certificate is refused');
+        self::assertFalse(SettingsValidator::isCaBundle($dir), 'directories are refused');
+        self::assertFalse(SettingsValidator::isCaBundle($dir . '/missing.pem'));
+
+        $system = array_values(array_filter(['/etc/ssl/certs/ca-certificates.crt', '/etc/pki/tls/certs/ca-bundle.crt', '/etc/ssl/cert.pem'], 'is_readable'));
+
+        if ($system !== []) {
+            self::assertTrue(SettingsValidator::isCaBundle($system[0]), 'the system CA bundle is accepted');
+        }
+
+        array_map('unlink', glob($dir . '/*'));
+        rmdir($dir);
     }
 
     /** @return iterable<string, array{0: array<string, string>, 1: string}> */

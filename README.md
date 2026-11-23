@@ -1,6 +1,6 @@
 # Joomla Zabbix (com_zabbix)
 
-`com_zabbix` is a Joomla 6 component that brings **Zabbix 7.4** into your Joomla site through the
+`com_zabbix` is a Joomla 6 component that brings **Zabbix** into your Joomla site through the
 Zabbix JSON-RPC API. Users log in to Joomla and see Zabbix **dashboards** and **hosts**, drawn by
 Joomla with live data. Each user sees only what their own Zabbix user may see.
 
@@ -66,8 +66,8 @@ Give it a role that allows only read methods (below).
 
 ## Requirements
 
-- Joomla **6.0 or later** (developed for 6.2), PHP **8.3+** with `curl` and `openssl`
 - Zabbix **7.4** (Find Endpoints warns about other versions)
+- Joomla **6.0 or later** (developed for 6.2), PHP **8.3+** with `curl` and `openssl`
 - The Joomla server must reach the Zabbix front end over HTTPS (or HTTP on a trusted network)
 
 ## Zabbix setup (once)
@@ -115,9 +115,18 @@ matched to a Zabbix user automatically (on their first visit, or with
   **User Mappings** shows how many users are waiting, with a link to them; select them and click
   **Confirm**. Open a user first to see what they will be able to see.
 
-Choose *Wait for administrator approval* where users can set their own Joomla username or e-mail,
-since someone could enter a colleague's before that colleague's first visit. While a user is
-waiting:
+Automatic matching never links:
+
+- a Zabbix **Super admin** (e.g. `Admin`), whose view covers everything;
+- a Zabbix user who is **already linked** to another Joomla user (active or waiting).
+
+These are left *Not found*; Rematch and Find Endpoints say why. Link them by hand in User
+Mappings if it is right.
+
+Choose *Wait for administrator approval* where users can set their own Joomla username or e-mail
+(open registration, editable profiles), since someone could enter the username or address of a
+colleague who has not used the portal yet. Integration Settings and Find Endpoints warn when
+registration is open while new users are approved automatically. While a user is waiting:
 
 - if their Joomla e-mail changes, the waiting match is suspended;
 - no Zabbix calls are made for them;
@@ -133,13 +142,13 @@ The portal pages have their own design, the same as the ServiceDesk Plus and ZKB
 Fonts and link colours come from the template. The component loads no Bootstrap and no jQuery.
 The pages keep a little space on the left and right, also in a full-width template row.
 
-Colours are Zabbix 7.4's own: problems and severities use the severity colours set in your Zabbix
+Colours are Zabbix's own: problems and severities use the severity colours set in your Zabbix
 (*Administration → General → Trigger displaying options*, read with `settings.get` and kept for
 the cache time; Zabbix's defaults if they cannot be read) with Zabbix's dark text; host
 availability, gauges, clocks, change indicators and graph and pie chart colours (shades of a data
 set's colour or Zabbix's palettes) are those Zabbix uses.
 
-Dashboard widgets are drawn as Zabbix 7.4 draws them, with each widget's own settings: Top hosts
+Dashboard widgets are drawn as Zabbix draws them, with each widget's own settings: Top hosts
 bars and indicators with threshold colours and decimal places, Item value positions, sizes,
 colours, thresholds and sparkline, Gauge thresholds, labels and needle, Clock time zone and
 parts, coloured count boxes, and values formatted as in Zabbix (*58.19 %*, *42.00 °C*,
@@ -193,6 +202,24 @@ The API token is encrypted with a key derived from:
 
 If you change the secret, the stored token can no longer be decrypted. Enter the token again.
 
+## Upgrading
+
+Install the new package over the old one, or use **System → Update → Extensions**: settings,
+mappings and the API token are kept, and the database update files run by themselves. Then press
+**Clear Cache** in Integration Settings.
+
+From **1.4.0**:
+
+- **Saving Integration Settings** with a changed Zabbix address, port, Connect via, TLS
+  verification or CA bundle asks for the API token again.
+- **A CA bundle** must be a `.pem`, `.crt` or `.cer` file with a certificate.
+- **Zabbix Super admins**, and Zabbix users already linked to another Joomla user, are no longer
+  matched automatically. Existing mappings are not changed; Rematch of such a user leaves it
+  *Not found* with an explanation.
+- **Problem tag filters** of Zabbix user groups now apply. A user limited by them sees fewer
+  problems than before (the same as in Zabbix).
+- **A trigger that uses several hosts** is shown only to users who may read all of them.
+
 ## Caching
 
 The portal keeps a few slow-changing Zabbix answers in the component's own table
@@ -209,7 +236,13 @@ page load and widget refresh.
 - Every administrator page and task needs **Super User** level (`core.admin`). Every POST needs a
   CSRF token. Portal data requests need the session token.
 - The API token is encrypted at rest. It is never shown, logged or sent to the browser. Error
-  messages and the audit log are scrubbed of anything that looks like a token.
+  messages and the audit log are scrubbed of anything that looks like a token, and PHP stack traces
+  leave it out (`#[\SensitiveParameter]`).
+- The stored token is only sent where it was entered for: changing the Zabbix address, port,
+  Connect via, TLS verification or CA bundle needs the token to be entered again. The audit log
+  records which of these changed (and the old and new host).
+- The CA bundle must be a `.pem`, `.crt` or `.cer` file with a certificate; other files are
+  refused.
 - Only read methods: the client refuses any other method before sending anything.
 - Redirects are not followed, so the token can't be sent to another host. TLS is verified by
   default.
@@ -218,6 +251,11 @@ page load and widget refresh.
 - Portal pages are sent with `no-store` and `noindex`. They work with a strict Content Security
   Policy (no inline scripts that run, no inline styles).
 - Portal models check login and the page's permission themselves, as well as the controller.
+- Each user sees what their Zabbix user may see: host group permissions (Deny wins), a trigger
+  only when every host it uses is readable, the user groups' **problem tag filters**, and dashboard
+  sharing. Super admins and already-linked Zabbix users are never matched automatically.
+- The dashboard list of the *Zabbix Dashboard* menu item names private dashboards only to
+  administrators of this component.
 - Values that come from Zabbix (names, widget settings, colours) are escaped or validated before
   they reach the page.
 - Audit log entries are kept for 365 days.
@@ -226,8 +264,9 @@ page load and widget refresh.
 
 ## Limitations
 
-- **Tag-based permissions** of Zabbix user groups (problem tag filters) are not applied. Only host
-  group permissions are.
+- Problem counts (Problems by severity, host problem counts) are read from at most 2000 recent
+  problems; on a very large Zabbix they can be lower than Zabbix's.
+- *unixtime* item values are shown in UTC.
 - Widgets that take their hosts or items from another widget (Zabbix "widget references") show
   their own configured hosts or items, or all the user may see.
 - Map-type and some other widgets are not drawn (see above).
@@ -255,6 +294,10 @@ python3 build/verify-package.py dist/com_zabbix-<version>.zip <version>
 The GitHub workflow (`.github/workflows/release.yml`) lints, tests, builds and verifies the
 package on every push and pull request. When a release `v<version>` is published, it attaches
 `com_zabbix.zip`, `updates.xml` and `changelog.xml` to it.
+
+How the component is built (components, request flows, permission model, caching, API methods,
+data stored): [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The last audit:
+[docs/AUDIT.md](docs/AUDIT.md).
 
 ### Layout
 

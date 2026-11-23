@@ -55,7 +55,7 @@ final class DashboardLayout
                     'x'         => $x,
                     'y'         => $y,
                     'width'     => max(1, min(self::COLUMNS - $x, (int) ($widget['width'] ?? 12))),
-                    'height'    => max(1, min(self::ROWS, (int) ($widget['height'] ?? 5))),
+                    'height'    => max(1, min(self::ROWS - $y, (int) ($widget['height'] ?? 5))),
                     'hideHeader' => (string) ($widget['view_mode'] ?? '0') === '1',
                     'supported' => WidgetTypes::isSupported($type),
                     'fields'    => array_values(array_filter($fields, 'is_array')),

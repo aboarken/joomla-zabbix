@@ -104,7 +104,8 @@ final class ProblemService
             $params['symptom'] = false;
         }
 
-        if ($tags) {
+        // Tags are also needed to apply the user's tag-based permissions.
+        if ($tags || ($scope->tagFilters !== [] && !$scope->all())) {
             $params['selectTags'] = ['tag', 'value'];
         }
 
@@ -125,9 +126,10 @@ final class ProblemService
             'skipDependent'    => true,
             'preservekeys'     => true,
         ]);
-        $triggers = \is_array($triggers) ? $triggers : [];
-        $now      = ($this->clock)();
-        $rows     = [];
+        $triggers  = \is_array($triggers) ? $triggers : [];
+        $hostGroup = $scope->all() ? [] : $this->hostGroups($triggers);
+        $now       = ($this->clock)();
+        $rows      = [];
 
         foreach ($problems as $problem) {
             $trigger = $triggers[(string) ($problem['objectid'] ?? '')] ?? null;
@@ -140,6 +142,19 @@ final class ProblemService
 
             if (!$scope->allowsHostGroups($groupsOfTrigger)) {
                 continue;
+            }
+
+            // As Zabbix: a trigger (and its problem) is readable only if every host it uses is.
+            if (!$scope->all()) {
+                foreach ((array) ($trigger['hosts'] ?? []) as $host) {
+                    if (!$scope->allowsHostGroups($hostGroup[(string) ($host['hostid'] ?? '')] ?? [])) {
+                        continue 2;
+                    }
+                }
+
+                if (!$scope->allowsTags($groupsOfTrigger, \is_array($problem['tags'] ?? null) ? $problem['tags'] : [])) {
+                    continue;
+                }
             }
 
             $clock  = (int) ($problem['clock'] ?? 0);
@@ -171,6 +186,45 @@ final class ProblemService
         }
 
         return $rows;
+    }
+
+    /**
+     * Host groups of every host of the triggers (one host.get), to check each host on its own.
+     *
+     * @param  array<string, array<string, mixed>>  $triggers
+     *
+     * @return array<string, list<string>>  hostid => groupids
+     */
+    private function hostGroups(array $triggers): array
+    {
+        $hostIds = [];
+
+        foreach ($triggers as $trigger) {
+            foreach ((array) ($trigger['hosts'] ?? []) as $host) {
+                $hostIds[(string) ($host['hostid'] ?? '')] = true;
+            }
+        }
+
+        unset($hostIds['']);
+
+        if ($hostIds === []) {
+            return [];
+        }
+
+        $hosts  = $this->client->call('host.get', [
+            'output'           => ['hostid'],
+            'hostids'          => array_map('strval', array_keys($hostIds)),
+            'selectHostGroups' => ['groupid'],
+        ]);
+        $groups = [];
+
+        foreach (\is_array($hosts) ? $hosts : [] as $host) {
+            if (\is_array($host) && isset($host['hostid'])) {
+                $groups[(string) $host['hostid']] = array_map(static fn ($g): string => (string) ($g['groupid'] ?? ''), (array) ($host['hostgroups'] ?? []));
+            }
+        }
+
+        return $groups;
     }
 
     /**

@@ -118,7 +118,9 @@ final class UsermapController extends BaseController
 
             // Say what was compared, and with how many Zabbix users: few users means the API
             // token's user may not see them all (it must be a Super admin).
-            if ($result === UserMatcher::NOT_FOUND || $result === UserMatcher::AMBIGUOUS) {
+            if ($result === UserMatcher::PROTECTED) {
+                $this->app->enqueueMessage(Text::sprintf('COM_ZABBIX_MAPPING_REMATCH_PROTECTED', $this->escape((string) $user->name), $this->escape((string) $user->username)), 'warning');
+            } elseif ($result === UserMatcher::NOT_FOUND || $result === UserMatcher::AMBIGUOUS) {
                 $this->app->enqueueMessage(Text::sprintf(
                     $result === UserMatcher::NOT_FOUND ? 'COM_ZABBIX_MAPPING_REMATCH_NOT_FOUND' : 'COM_ZABBIX_MAPPING_REMATCH_AMBIGUOUS',
                     $this->escape((string) $user->name),

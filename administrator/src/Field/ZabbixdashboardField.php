@@ -30,11 +30,27 @@ final class ZabbixdashboardField extends ListField
             $component = Factory::getApplication()->bootComponent('com_zabbix');
 
             if ($component instanceof ZabbixComponent) {
+                // The API token sees every dashboard. Their names are for administrators of this
+                // component; someone who may only edit menu items sees the public ones (and the
+                // dashboard already chosen, by number).
+                $admin   = (bool) Factory::getApplication()->getIdentity()?->authorise('core.admin', 'com_zabbix');
+                $current = (string) $this->value;
+                $listed  = false;
+
                 foreach ($component->getDashboardService()->all() as $dashboard) {
+                    if (!$admin && (string) ($dashboard['private'] ?? '1') !== '0') {
+                        continue;
+                    }
+
+                    $listed    = $listed || (string) $dashboard['dashboardid'] === $current;
                     $options[] = (object) [
                         'value' => (string) $dashboard['dashboardid'],
                         'text'  => (string) ($dashboard['name'] ?? '') . ' (#' . $dashboard['dashboardid'] . ')',
                     ];
+                }
+
+                if (!$listed && ctype_digit($current)) {
+                    $options[] = (object) ['value' => $current, 'text' => '#' . $current];
                 }
             }
         } catch (\Throwable) {

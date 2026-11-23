@@ -18,4 +18,11 @@ interface UserMapRepositoryInterface
     public function save(UserMapping $mapping): void;
 
     public function delete(int $joomlaUserId): void;
+
+    /**
+     * Joomla users linked to a Zabbix user (active or waiting for approval).
+     *
+     * @return list<int>
+     */
+    public function linkedTo(string $zabbixUserId): array;
 }

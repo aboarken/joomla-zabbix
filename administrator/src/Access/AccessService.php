@@ -34,11 +34,13 @@ final class AccessService
             return $this->resolver->resolve($user, []);
         }
 
-        $data = $this->cache->remember(0, 'scope:' . $user->userid . ':' . implode(',', $user->groupIds), function () use ($user): array {
+        $data = $this->cache->remember(0, 'scope2:' . $user->userid . ':' . implode(',', $user->groupIds), function () use ($user): array {
             $groups = $user->groupIds === [] ? [] : $this->client->call('usergroup.get', [
                 'output'                => ['usrgrpid', 'name', 'users_status'],
                 'usrgrpids'             => $user->groupIds,
                 'selectHostGroupRights' => ['id', 'permission'],
+                // Tag-based permissions on problems (Zabbix: User groups → Problem tag filter).
+                'selectTagFilters'      => ['groupid', 'tag', 'value'],
             ]);
 
             return $this->resolver->resolve($user, \is_array($groups) ? array_values($groups) : [])->toArray();

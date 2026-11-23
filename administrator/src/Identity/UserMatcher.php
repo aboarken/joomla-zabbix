@@ -10,6 +10,8 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Identity;
 \defined('_JEXEC') or die;
 // phpcs:enable PSR1.Files.SideEffects
 
+use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
+
 /**
  * Finds the Zabbix user of a Joomla user. Pure.
  *
@@ -19,12 +21,37 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Identity;
  *  - username: only the username;
  *  - email: only the e-mail address (media or a username that is an e-mail address).
  * Two or more candidates give "ambiguous": nobody is mapped until an administrator chooses.
+ *
+ * matchFor() adds the rules for automatic matching: a Zabbix Super admin, or a Zabbix user already
+ * linked to another Joomla user, is never matched automatically ("protected"); an administrator
+ * links them by hand. A Joomla username or e-mail is chosen by the user (registration, profile),
+ * so it alone must not give anyone the Super admin's view or a colleague's Zabbix identity.
  */
 final class UserMatcher
 {
     public const MATCHED   = 'matched';
     public const AMBIGUOUS = 'ambiguous';
     public const NOT_FOUND = 'not_found';
+    public const PROTECTED = 'protected';
+
+    /**
+     * match() for an automatic match of one Joomla user, with the protections above.
+     *
+     * @param  list<DirectoryUser>  $users
+     *
+     * @return array{0: string, 1: ?DirectoryUser}  [result, user]; PROTECTED names the user it would have been
+     */
+    public function matchFor(int $joomlaUserId, string $username, string $email, array $users, string $mode, UserMapRepositoryInterface $mappings): array
+    {
+        [$result, $user] = $this->match($username, $email, $users, $mode);
+
+        if ($result === self::MATCHED && $user !== null
+            && ($user->roleType === AccessScope::ROLE_SUPER_ADMIN || array_diff($mappings->linkedTo($user->userid), [$joomlaUserId]) !== [])) {
+            return [self::PROTECTED, $user];
+        }
+
+        return [$result, $user];
+    }
 
     /**
      * @param  list<DirectoryUser>  $users

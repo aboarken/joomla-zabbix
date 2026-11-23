@@ -46,7 +46,7 @@ final class JsonRpcClient
      *
      * @throws ZabbixException
      */
-    public function call(string $method, array $params = []): mixed
+    public function call(string $method, #[\SensitiveParameter] array $params = []): mixed
     {
         if (!self::isReadOnly($method)) {
             throw new ZabbixException(ZabbixException::PERMISSION, 'Only read methods are used', 'Refused locally: ' . $method, $method);
@@ -139,7 +139,8 @@ final class JsonRpcClient
 
     private function decode(string $method, int $status, string $body): mixed
     {
-        $data = json_decode($body, true);
+        // Depth limit: Zabbix answers are a few levels deep; anything deeper is not an answer.
+        $data = json_decode($body, true, 64);
 
         if ($status !== 200 && !\is_array($data)) {
             throw new ZabbixException(ZabbixException::HTTP, 'Unexpected HTTP status', 'HTTP ' . $status, $method);
@@ -150,8 +151,8 @@ final class JsonRpcClient
         }
 
         if (isset($data['error']) && \is_array($data['error'])) {
-            $message = (string) ($data['error']['message'] ?? '');
-            $detail  = (string) ($data['error']['data'] ?? '');
+            $message = \is_scalar($data['error']['message'] ?? null) ? (string) $data['error']['message'] : '';
+            $detail  = \is_scalar($data['error']['data'] ?? null) ? (string) $data['error']['data'] : '';
             $text    = trim($message . ' ' . $detail);
 
             $kind = match (true) {

@@ -20,7 +20,15 @@
       return;
     }
 
-    const cfg = JSON.parse(configNode.textContent);
+    let cfg;
+
+    try {
+      cfg = JSON.parse(configNode.textContent);
+    } catch (e) {
+      mount.replaceChildren(el('p', { class: 'zbx-error-text', role: 'alert', text: t('COM_ZABBIX_JS_ERROR', 'The data could not be loaded.') }));
+      return;
+    }
+
     const fmt = P.makeFormatter(cfg.format);
     const periodSelect = document.querySelector('[data-zbx-period]');
     const updated = document.querySelector('[data-zbx-updated]');
@@ -413,7 +421,7 @@
 
     /* ---- Layout ---- */
     cfg.layout.pages.forEach((page, index) => {
-      const grid = el('div', { class: 'zbx-grid', id: `zbx-page-${index}`, role: cfg.layout.pages.length > 1 ? 'tabpanel' : null, 'aria-labelledby': cfg.layout.pages.length > 1 ? `zbx-tab-${index}` : null, hidden: index !== 0 });
+      const grid = el('div', { class: 'zbx-grid', id: `zbx-page-${index}`, role: cfg.layout.pages.length > 1 ? 'tabpanel' : null, 'aria-labelledby': cfg.layout.pages.length > 1 ? `zbx-tab-${index}` : null, tabindex: cfg.layout.pages.length > 1 ? '0' : null, hidden: index !== 0 });
       const widgets = page.widgets.map((w) => {
         const body = el('div', { class: 'zbx-widget__body' });
         const node = el('section', {
@@ -472,20 +480,26 @@
       };
 
       try {
+        // A request that hangs ends after REQUEST_TIMEOUT, so Refresh and auto-refresh go on.
         const res = await fetch(`${cfg.endpoint}&dashboard=${encodeURIComponent(cfg.dashboard)}&widget=${encodeURIComponent(w.id)}${period}`, {
-          credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token },
+          credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token }, signal: P.timeoutSignal(),
         });
         const json = await res.json().catch(() => ({ error: 'invalid' }));
+        const ok = res.ok && !json.error;
 
         draw(() => {
-          if (!res.ok || json.error) {
+          if (!ok) {
             body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText(json.error) }));
           } else {
             (render[json.data.kind] || render.unsupported)(body, json.data);
           }
         });
+
+        return ok;
       } catch (e) {
         draw(() => body.append(el('p', { class: 'zbx-error-text', role: 'alert', text: errorText('') })));
+
+        return false;
       } finally {
         if (seq === item.seq) {
           item.node.classList.remove('is-loading');
@@ -503,12 +517,23 @@
       page.loaded = true;
       busy += 1;
       setBusy();
-      // A few at a time, so a big dashboard does not open dozens of requests at once.
+      // A few at a time, so a big dashboard does not open dozens of requests at once. A newer
+      // load of the page (Refresh, period change) stops the older queue.
+      page.generation = (page.generation || 0) + 1;
+      const generation = page.generation;
       const queue = page.widgets.slice();
-      const worker = async () => { while (queue.length) { await load(queue.shift()); } };
+      let succeeded = 0;
+      const worker = async () => {
+        while (queue.length && generation === page.generation) {
+          if (await load(queue.shift())) { succeeded += 1; }
+        }
+      };
 
       return Promise.all([worker(), worker(), worker(), worker()]).then(() => {
-        if (updated) { updated.textContent = `· ${t('COM_ZABBIX_JS_UPDATED', 'Updated')} ${fmt.time(Math.floor(Date.now() / 1000))}`; }
+        // "Updated" only when something was actually loaded (not when every widget failed).
+        if (updated && succeeded > 0 && generation === page.generation) {
+          updated.textContent = `· ${t('COM_ZABBIX_JS_UPDATED', 'Updated')} ${fmt.time(Math.floor(Date.now() / 1000))}`;
+        }
       }).finally(() => {
         busy -= 1;
         setBusy();
@@ -518,15 +543,27 @@
     const show = (index) => {
       current = index;
       pages.forEach((p, i) => { p.grid.hidden = i !== index; });
-      document.querySelectorAll('[data-zbx-tab]').forEach((tab) => tab.setAttribute('aria-selected', String(Number(tab.dataset.zbxTab) === index)));
+      // WAI-ARIA tabs: only the selected tab is in the Tab order; arrows, Home and End move.
+      document.querySelectorAll('[data-zbx-tab]').forEach((tab) => {
+        const selected = Number(tab.dataset.zbxTab) === index;
+        tab.setAttribute('aria-selected', String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
       if (!pages[index].loaded) { loadPage(index); }
     };
 
     document.querySelectorAll('[data-zbx-tab]').forEach((tab) => {
       tab.addEventListener('click', () => show(Number(tab.dataset.zbxTab)));
       tab.addEventListener('keydown', (event) => {
-        if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') { return; }
-        const next = (current + (event.key === 'ArrowRight' ? 1 : pages.length - 1)) % pages.length;
+        const moves = {
+          ArrowRight: (current + 1) % pages.length,
+          ArrowLeft: (current + pages.length - 1) % pages.length,
+          Home: 0,
+          End: pages.length - 1,
+        };
+        if (!(event.key in moves)) { return; }
+        event.preventDefault();
+        const next = moves[event.key];
         show(next);
         document.querySelector(`[data-zbx-tab="${next}"]`).focus();
       });
@@ -544,8 +581,14 @@
     periodSelect?.addEventListener('change', refresh);
 
     if (cfg.refresh > 0) {
-      timer = setInterval(() => { if (!document.hidden && !busy) { refresh(); } }, cfg.refresh * 1000);
+      const startTimer = () => {
+        clearInterval(timer);
+        timer = setInterval(() => { if (!document.hidden && !busy) { refresh(); } }, cfg.refresh * 1000);
+      };
+      startTimer();
       window.addEventListener('pagehide', () => clearInterval(timer));
+      // Back to the page from the browser's back/forward cache: refresh and start again.
+      window.addEventListener('pageshow', (event) => { if (event.persisted) { refresh(); startTimer(); } });
     }
 
     loadPage(0);
