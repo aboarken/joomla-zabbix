@@ -187,6 +187,6 @@ $h = $this->host;
             <?php endif; ?>
         </section>
 
-        <script type="application/json" data-zbx-config><?php echo json_encode($this->config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?></script>
+        <script type="application/json" data-zbx-config><?php echo json_encode($this->config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE); ?></script>
     <?php endif; ?>
 </div>

@@ -62,6 +62,42 @@ final class IdentityTest extends TestCase
         self::assertSame('4', $m->match('x', 'carol@example.org', $users, 'email')[1]?->userid);
     }
 
+    public function testSuperAdminsAreNeverMatchedAutomatically(): void
+    {
+        // Someone registers the Joomla username "admin" (Zabbix's default Super admin).
+        $identity = $this->resolver()->resolve(50, 'admin', 'attacker@example.net');
+
+        self::assertNull($identity->zabbixUser, 'no Super admin view from a chosen username');
+        self::assertSame(UserMapping::STATUS_NOT_FOUND, $this->repo->find(50)?->status);
+        self::assertNull($this->repo->find(50)?->zabbixUserId);
+        self::assertContains('identity.protected', $this->audit->actions());
+
+        // Also by e-mail, and with Rematch.
+        $manager = new MappingManager($this->repo, fn () => $this->directory, $this->audit, 'username_email', fn () => $this->now);
+        self::assertSame(UserMatcher::PROTECTED, $manager->rematch(51, 'nobody', 'admin@example.org', 9));
+        self::assertNull($this->repo->find(51)?->zabbixUserId);
+    }
+
+    public function testAZabbixUserLinkedToSomeoneIsNotTakenOverByChangingAnEmail(): void
+    {
+        // Alice's Joomla account (10) is linked to Zabbix user alice.
+        self::assertSame('2', $this->resolver()->resolve(10, 'alice', 'alice@example.org')->zabbixUser?->userid);
+
+        // Mallory (11), not found before, sets her Joomla e-mail to Alice's address.
+        $identity = $this->resolver()->resolve(11, 'mallory', 'alice@example.org');
+
+        self::assertNull($identity->zabbixUser, 'a linked Zabbix user is not matched to a second Joomla user');
+        self::assertSame(UserMapping::STATUS_NOT_FOUND, $this->repo->find(11)?->status);
+
+        // Alice herself still resolves to her Zabbix user.
+        self::assertSame('2', $this->resolver()->resolve(10, 'alice', 'alice@example.org')->zabbixUser?->userid);
+
+        // An administrator can still link Mallory's account by hand if that is right.
+        $matcher = new UserMatcher();
+        self::assertSame(UserMatcher::PROTECTED, $matcher->matchFor(11, 'mallory', 'alice@example.org', $this->directory->users, 'username_email', $this->repo)[0]);
+        self::assertSame(UserMatcher::MATCHED, $matcher->matchFor(10, 'alice', 'alice@example.org', $this->directory->users, 'username_email', $this->repo)[0], 'not protected against its own link');
+    }
+
     public function testEmailsWithADisplayNameAreMatched(): void
     {
         // Zabbix accepts "Name <address>" in an e-mail media's Send to.

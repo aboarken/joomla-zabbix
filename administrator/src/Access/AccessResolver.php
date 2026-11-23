@@ -34,6 +34,7 @@ final class AccessResolver
         $disabled = $user->disabled;
         $best     = [];
         $denied   = [];
+        $tags     = [];
 
         foreach ($userGroups as $group) {
             if (!\is_array($group) || !\in_array((string) ($group['usrgrpid'] ?? ''), $user->groupIds, true)) {
@@ -42,6 +43,12 @@ final class AccessResolver
 
             if ((string) ($group['users_status'] ?? '0') === '1') {
                 $disabled = true;
+            }
+
+            foreach ((array) ($group['tag_filters'] ?? []) as $filter) {
+                if (\is_array($filter) && isset($filter['groupid'])) {
+                    $tags[(string) $filter['groupid']][] = ['tag' => (string) ($filter['tag'] ?? ''), 'value' => (string) ($filter['value'] ?? '')];
+                }
             }
 
             foreach ((array) ($group['hostgroup_rights'] ?? []) as $right) {
@@ -72,7 +79,8 @@ final class AccessResolver
             array_map('strval', $read),
             array_map('strval', $deniedIds),
             $user->groupIds,
-            $disabled
+            $disabled,
+            $tags
         );
     }
 }

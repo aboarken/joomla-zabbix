@@ -112,7 +112,13 @@ final class MappingManager
      */
     public function rematch(int $joomlaUserId, string $username, string $email, int $actorId): string
     {
-        [$result, $user] = (new UserMatcher())->match($username, $email, $this->directory()->all(), $this->matchMode);
+        [$result, $user] = (new UserMatcher())->matchFor($joomlaUserId, $username, $email, $this->directory()->all(), $this->matchMode, $this->repository);
+
+        // A protected Zabbix user (Super admin, or linked to someone else) is linked by hand only.
+        if ($result === UserMatcher::PROTECTED) {
+            $user = null;
+        }
+
         $now             = ($this->clock)();
         $pending         = $result === UserMatcher::MATCHED && !$this->autoApprove;
 

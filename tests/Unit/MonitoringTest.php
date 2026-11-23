@@ -84,7 +84,7 @@ final class MonitoringTest extends TestCase
                     && (!isset($p['hostids']) || \in_array($r['host'], $p['hostids'], true))
                     && (!isset($p['severities']) || \in_array((int) $r['severity'], $p['severities'], true))));
             },
-            'trigger.get' => static fn (array $p): array => array_intersect_key($triggers, array_flip($p['triggerids'])),
+            'trigger.get' => static fn (array $p): array => array_intersect_key($triggers, array_flip($p['triggerids'] ?? array_keys($triggers))),
             'item.get' => static fn (array $p): array => array_values(array_filter($items, static fn (array $i): bool => (!isset($p['itemids']) || \in_array($i['itemid'], $p['itemids'], true))
                 && $inGroups($groupsOf[$i['hostid']], $p['groupids'] ?? null))),
             'history.get' => static fn (array $p): array => array_merge(...array_map(static fn (string $id): array => [
@@ -191,6 +191,44 @@ final class MonitoringTest extends TestCase
         ]), Period::from('1h'));
 
         self::assertSame(ZabbixColours::palette(2, $count), array_column($palette['series'], 'color'));
+    }
+
+    public function testChartsReadTheNewestHistoryAndKeepColoursPerItem(): void
+    {
+        // Item 1001 is numeric; a text item between two numeric ones must not shift the colours.
+        $this->fake->routes['item.get'] = static fn (array $p): array => array_values(array_filter([
+            ['itemid' => '1001', 'hostid' => '1', 'name' => 'CPU', 'value_type' => '0', 'units' => '%', 'hosts' => [['hostid' => '1', 'name' => 'Web']]],
+            ['itemid' => '1002', 'hostid' => '1', 'name' => 'Version', 'value_type' => '4', 'units' => '', 'hosts' => [['hostid' => '1', 'name' => 'Web']]],
+            ['itemid' => '1003', 'hostid' => '1', 'name' => 'Load', 'value_type' => '0', 'units' => '', 'hosts' => [['hostid' => '1', 'name' => 'Web']]],
+        ], static fn (array $i): bool => !isset($p['itemids']) || \in_array($i['itemid'], $p['itemids'], true)));
+        $this->fake->routes['host.get'] = static fn (): array => [['hostid' => '1', 'hostgroups' => [['groupid' => '10']]]];
+
+        $data = $this->widgets()->data($this->alice, self::widget('svggraph', [
+            'ds.0.dataset_type' => '0', 'ds.0.itemids.0' => '1001', 'ds.0.itemids.1' => '1002', 'ds.0.itemids.2' => '1003',
+            'ds.0.color.0' => 'FF0000', 'ds.0.color.1' => '00FF00', 'ds.0.color.2' => '0000FF',
+        ]), Period::from('1h'));
+
+        self::assertSame(['1001' => '#FF0000', '1003' => '#0000FF'], array_column($data['series'], 'color', 'itemid'));
+        self::assertSame('DESC', $this->fake->lastParams('history.get')['sortorder'], 'newest rows first, so a limit drops the oldest');
+        self::assertSame([[self::NOW - 120, 10.0], [self::NOW - 60, 20.0]], $data['series'][0]['points'], 'drawn in time order');
+    }
+
+    public function testHostWidgetsWithoutProblemsDoNotReadProblems(): void
+    {
+        $this->widgets()->data($this->alice, self::widget('hostavail'));
+
+        self::assertNotContains('problem.get', $this->fake->methods());
+        self::assertNotContains('trigger.get', $this->fake->methods());
+    }
+
+    public function testSystemInformationDoesNotCountHostsInADeniedGroup(): void
+    {
+        $this->fake->routes['apiinfo.version'] = '7.4.3';
+        $data  = $this->widgets()->data($this->alice, self::widget('systeminfo'));
+        $hosts = array_column($data['rows'], 'value', 'name')['hosts'];
+
+        self::assertSame([2, 0], $hosts, 'web and hr; db is also in denied group 12 (Deny wins)');
+        self::assertSame(['1', '3'], $this->fake->lastParams('item.get')['hostids'], 'items counted on the visible hosts only');
     }
 
     public function testLongPeriodsReadTrends(): void

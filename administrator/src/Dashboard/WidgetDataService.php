@@ -177,7 +177,7 @@ final class WidgetDataService
     private function availability(AccessScope $scope, WidgetFields $fields): array
     {
         $hosts = array_values(array_filter(
-            $this->hosts->hosts($scope, $fields->list('groupids')),
+            $this->hosts->hosts($scope, $fields->list('groupids'), withProblems: false),
             static fn (array $h): bool => $h['enabled'] && ($fields->int('maintenance') === 1 || !$h['maintenance'])
         ));
 
@@ -432,8 +432,15 @@ final class WidgetDataService
         $colour = 0;
 
         foreach ($this->dataSets($scope, $fields) as $set) {
-            foreach ($this->history->series($set['items'], $period) as $i => $line) {
-                $line['color'] = $set['colors'][$i] ?? self::PALETTE[$colour % \count(self::PALETTE)];
+            // Colours by item: series() leaves out non-numeric items, so positions can shift.
+            $byItem = [];
+
+            foreach ($set['items'] as $i => $item) {
+                $byItem[(string) $item['itemid']] = $set['colors'][$i] ?? null;
+            }
+
+            foreach ($this->history->series($set['items'], $period) as $line) {
+                $line['color'] = $byItem[$line['itemid']] ?? self::PALETTE[$colour % \count(self::PALETTE)];
                 $series[]      = $line;
                 $colour++;
             }
@@ -521,7 +528,7 @@ final class WidgetDataService
     private function topHosts(AccessScope $scope, WidgetFields $fields): array
     {
         $hosts = array_values(array_filter(
-            $this->hosts->hosts($scope, $fields->list('groupids')),
+            $this->hosts->hosts($scope, $fields->list('groupids'), withProblems: false),
             static fn (array $h): bool => $h['enabled'] && ($fields->int('maintenance') === 1 || !$h['maintenance'])
         ));
 
@@ -562,7 +569,12 @@ final class WidgetDataService
                     'selectValueMap' => ['mappings'],
                 ]);
 
-                foreach (\is_array($rows) ? $rows : [] as $row) {
+                // Several items of a host can have the same name (e.g. discovered items): always
+                // use the same one, the oldest (lowest itemid), not whichever Zabbix lists last.
+                $rows = \is_array($rows) ? $rows : [];
+                usort($rows, static fn ($a, $b): int => (int) ($b['itemid'] ?? 0) <=> (int) ($a['itemid'] ?? 0));
+
+                foreach ($rows as $row) {
                     $numeric = ValueFormatter::isNumeric($row['value_type'] ?? 4) && is_numeric($row['lastvalue'] ?? null);
 
                     $values[$i][(string) $row['hostid']] = [
@@ -679,10 +691,32 @@ final class WidgetDataService
             return ['kind' => 'systeminfo', 'rows' => []];
         }
 
-        $count = function (string $method, array $params) use ($groups): int {
+        // With a denied host group, a host in a readable group can still be hidden (Deny wins):
+        // count from the hosts the user may see, not from the groups.
+        $hostIds = null;
+        $hosts   = null;
+
+        if ($groups !== null && $scope->deniedGroupIds !== []) {
+            $list    = $this->client->call('host.get', ['output' => ['hostid', 'status'], 'groupids' => $groups, 'selectHostGroups' => ['groupid']]);
+            $visible = array_values(array_filter(\is_array($list) ? $list : [], static fn ($h): bool => \is_array($h)
+                && $scope->allowsHostGroups(array_map(static fn ($g): string => (string) ($g['groupid'] ?? ''), (array) ($h['hostgroups'] ?? [])))));
+            $hostIds = array_map(static fn (array $h): string => (string) $h['hostid'], $visible);
+            $hosts   = [
+                \count(array_filter($visible, static fn (array $h): bool => (string) ($h['status'] ?? '0') === '0')),
+                \count(array_filter($visible, static fn (array $h): bool => (string) ($h['status'] ?? '0') === '1')),
+            ];
+        }
+
+        $count = function (string $method, array $params) use ($groups, $hostIds): int {
+            if ($hostIds === []) {
+                return 0;
+            }
+
             $params += ['countOutput' => true];
 
-            if ($groups !== null) {
+            if ($hostIds !== null) {
+                $params['hostids'] = $hostIds;
+            } elseif ($groups !== null) {
                 $params['groupids'] = $groups;
             }
 
@@ -691,7 +725,7 @@ final class WidgetDataService
 
         $rows = [['name' => 'version', 'value' => $this->client->version()]];
 
-        $rows[] = ['name' => 'hosts', 'value' => [
+        $rows[] = ['name' => 'hosts', 'value' => $hosts ?? [
             $count('host.get', ['filter' => ['status' => 0]]),
             $count('host.get', ['filter' => ['status' => 1]]),
         ]];

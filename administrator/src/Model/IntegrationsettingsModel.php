@@ -67,7 +67,7 @@ final class IntegrationsettingsModel extends FormModel
     {
         $component = $this->zabbix();
         $validator = new SettingsValidator(
-            static fn (string $plain, string $context): string => $component->getKeyVault()->encrypt($plain, $context)
+            static fn (#[\SensitiveParameter] string $plain, string $context): string => $component->getKeyVault()->encrypt($plain, $context)
         );
 
         $component->getSettingsRepository()->save($validator->validate($data, $this->settings()));

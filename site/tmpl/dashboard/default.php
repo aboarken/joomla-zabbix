@@ -72,7 +72,7 @@ $layout = $this->layout;
                 <?php foreach ($layout['pages'] as $i => $page) : ?>
                     <button type="button" role="tab" class="zbx-tab" id="zbx-tab-<?php echo $i; ?>"
                             aria-controls="zbx-page-<?php echo $i; ?>" aria-selected="<?php echo $i === 0 ? 'true' : 'false'; ?>"
-                            data-zbx-tab="<?php echo $i; ?>">
+                            tabindex="<?php echo $i === 0 ? '0' : '-1'; ?>" data-zbx-tab="<?php echo $i; ?>">
                         <?php echo $this->escape($page['name'] !== '' ? $page['name'] : Text::sprintf('COM_ZABBIX_DASHBOARD_PAGE_N', $i + 1)); ?>
                     </button>
                 <?php endforeach; ?>
@@ -80,7 +80,7 @@ $layout = $this->layout;
         <?php endif; ?>
 
         <div data-zbx-dashboard></div>
-        <script type="application/json" data-zbx-config><?php echo json_encode(['layout' => $layout] + $this->config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE); ?></script>
+        <script type="application/json" data-zbx-config><?php echo json_encode(['layout' => $layout] + $this->config, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE); ?></script>
         <noscript><div class="zbx-alert zbx-alert--info"><?php echo Text::_('COM_ZABBIX_DASHBOARD_NOSCRIPT'); ?></div></noscript>
     <?php endif; ?>
 </div>

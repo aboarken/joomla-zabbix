@@ -25,6 +25,9 @@ final class HistoryService
 
     public const MAX_ITEMS = 20;
 
+    /** Rows read with one history.get (all items of one value type). */
+    public const MAX_ROWS = 100000;
+
     /** @var \Closure(): int */
     private \Closure $clock;
 
@@ -75,9 +78,11 @@ final class HistoryService
                     'itemids'   => $ids,
                     'time_from' => $from,
                     'time_till' => $till,
+                    // Newest first, so that when the limit is reached the chart loses its oldest
+                    // points, not the most recent ones (points are sorted by time below).
                     'sortfield' => 'clock',
-                    'sortorder' => 'ASC',
-                    'limit'     => 100000,
+                    'sortorder' => 'DESC',
+                    'limit'     => self::MAX_ROWS,
                 ]);
 
                 foreach (\is_array($rows) ? $rows : [] as $row) {

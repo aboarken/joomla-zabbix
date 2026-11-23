@@ -28,11 +28,13 @@ final class HostService
      * All visible hosts (the Zabbix API has no offset, so the list is read once and paged by the
      * page itself), with problem counts per severity.
      *
-     * @param  list<string>  $groupIds  [] = every group the user may see
+     * @param  list<string>  $groupIds      [] = every group the user may see
+     * @param  bool          $withProblems  count each host's problems (a problem.get and a
+     *                                      trigger.get); widgets that do not show them skip it
      *
      * @return list<array<string, mixed>>  sorted by name
      */
-    public function hosts(AccessScope $scope, array $groupIds = [], string $search = '', int $max = 2000): array
+    public function hosts(AccessScope $scope, array $groupIds = [], string $search = '', int $max = 2000, bool $withProblems = true): array
     {
         $groups = $scope->groupFilter($groupIds);
 
@@ -61,7 +63,7 @@ final class HostService
 
         $rows   = $this->client->call('host.get', $params);
         $hosts  = [];
-        $counts = $this->problemCounts($scope, $groupIds);
+        $counts = $withProblems ? $this->problemCounts($scope, $groupIds) : [];
 
         foreach (\is_array($rows) ? $rows : [] as $row) {
             $hostGroups = array_values(array_map(

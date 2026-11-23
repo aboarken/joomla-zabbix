@@ -22,5 +22,5 @@ interface TransportInterface
      *
      * @throws ZabbixException  NETWORK or TLS
      */
-    public function post(string $url, array $headers, string $body, TransportOptions $options): array;
+    public function post(string $url, #[\SensitiveParameter] array $headers, #[\SensitiveParameter] string $body, TransportOptions $options): array;
 }

@@ -3,6 +3,36 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] - 2026-11-23
+
+Full repository audit: architecture, standards, security, performance. See `docs/AUDIT.md`.
+
+### Security
+- **No identity takeover through automatic matching (High).** A Zabbix **Super admin** (e.g. `Admin`), or a Zabbix user already linked to another Joomla user, is never matched automatically. Before, anyone able to register on the site could pick the username `admin` and get Zabbix's Super admin view; and a user could set their Joomla e-mail to a colleague's address and be linked to the colleague's Zabbix user. They are now left *Not found*, Rematch and Find Endpoints say why, and an administrator can link them by hand. Integration Settings and Find Endpoints warn when Joomla registration is open while new users are approved automatically.
+- **The stored API token is only sent where it was entered for (Medium).** Changing the Zabbix address, port, Connect via, TLS verification or CA bundle now needs the token to be entered again, so an administrator of this component who does not know the token cannot send it to another server. The audit log records which of these changed, and the old and new host.
+- **Problem tag filters of Zabbix user groups now apply (Medium)**, as in Zabbix: a user limited to some problem tags in a host group sees only those problems.
+- **A trigger that uses several hosts is shown only if the user may read all of them (Medium)**, as in Zabbix. Before, one readable host was enough, which could show a problem and another host's name.
+- **System information** no longer counts hosts that are also in a denied host group.
+- **The Zabbix Dashboard menu item** lists private dashboards only to administrators of this component (others see the public ones).
+- **CA bundle**: must be a `.pem`, `.crt` or `.cer` file with a certificate (other files of the server are refused, so the field cannot be used to probe for files); the real path is stored.
+- The API token and request bodies are marked `#[\SensitiveParameter]`, so PHP stack traces leave them out. API answers are decoded with a depth limit, and a malformed error answer no longer raises a warning.
+- Portal data requests answer any unexpected error (e.g. a database error) with a JSON error, never Joomla's error page.
+
+### Fixed
+- **Charts keep the newest data** when an item has more history rows than one request reads (the oldest are left out now, not the most recent ones).
+- **Graph colours stay with their items** when a data set contains a non-numeric item (the lines after it took the wrong colours).
+- **Host chart (host page)**: a slower answer for the item or period chosen before can no longer be drawn under the newly chosen item; the older request is cancelled.
+- **Dashboard refresh never stops**: a request that hangs ends after 30 seconds, so Refresh and auto-refresh go on; a page reloaded from the browser's back/forward cache starts auto-refresh again; *Updated* is only shown when something was loaded; an older refresh queue stops when a newer one starts.
+- **Top hosts**: when a host has several items with the same name, the same one (the oldest) is always used.
+- **Widgets** cannot reach past the bottom of the dashboard grid.
+- A page whose configuration holds invalid characters no longer stays blank.
+
+### Changed
+- **Host availability and Top hosts** no longer read problems they do not show (two API calls fewer per refresh).
+- **Dashboard page tabs** follow the WAI-ARIA tabs pattern: only the selected tab is in the Tab order, with arrow keys, Home and End; page panels can be focused.
+- The host chart scrolls without animation when the user prefers less motion.
+- `docs/ARCHITECTURE.md`; README: Upgrading, security and limitations brought up to date.
+
 ## [1.3.16] - 2026-11-23
 
 ### Changed

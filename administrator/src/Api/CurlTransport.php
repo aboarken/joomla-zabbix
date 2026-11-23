@@ -32,7 +32,7 @@ final class CurlTransport implements TransportInterface
 
     private ?\CurlHandle $handle = null;
 
-    public function post(string $url, array $headers, string $body, TransportOptions $options): array
+    public function post(string $url, #[\SensitiveParameter] array $headers, #[\SensitiveParameter] string $body, TransportOptions $options): array
     {
         if (!preg_match('#^https?://#i', $url)) {
             throw new ZabbixException(ZabbixException::NOT_CONFIGURED, 'Invalid Zabbix URL');
@@ -62,7 +62,7 @@ final class CurlTransport implements TransportInterface
             CURLOPT_SSL_VERIFYHOST => $options->verifyTls ? 2 : 0,
             CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
             CURLOPT_ENCODING       => '',
-            CURLOPT_USERAGENT      => 'Joomla-com_zabbix/1.3.16',
+            CURLOPT_USERAGENT      => 'Joomla-com_zabbix/1.4.0',
             CURLOPT_WRITEFUNCTION  => static function ($ch, string $chunk) use (&$buffer): int {
                 if (\strlen($buffer) + \strlen($chunk) > self::MAX_BYTES) {
                     return 0;

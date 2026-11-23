@@ -15,6 +15,8 @@ use Joomla\CMS\MVC\Controller\BaseController;
 use Joomla\CMS\Router\Route;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Audit\AuditLogInterface;
+use ZabbixPortal\Component\Zabbix\Administrator\Settings\SettingsValidator;
+use ZabbixPortal\Component\Zabbix\Administrator\Settings\Settings;
 use ZabbixPortal\Component\Zabbix\Administrator\Model\IntegrationsettingsModel;
 use ZabbixPortal\Component\Zabbix\Administrator\Settings\ValidationFailed;
 
@@ -42,11 +44,13 @@ final class SettingsController extends BaseController
         $data = $this->input->post->get('jform', [], 'array');
 
         try {
+            $before = $this->component()->getSettingsRepository()->load();
             $this->model()->save($data);
+            $after  = $this->component()->getSettingsRepository()->load();
             $this->app->setUserState(self::STATE_KEY, null);
             $this->app->setUserState(self::STATE_TEST, null);
             $this->component()->getCache()->clear();
-            $this->component()->getAuditLog()->record($this->actorId(), 'settings.save', AuditLogInterface::RESULT_OK, '', $this->actorId());
+            $this->component()->getAuditLog()->record($this->actorId(), 'settings.save', AuditLogInterface::RESULT_OK, self::changes($before, $after), $this->actorId());
             $this->app->enqueueMessage(Text::_('COM_ZABBIX_SETTINGS_SAVED'), 'success');
         } catch (ValidationFailed $e) {
             // Keep the entered values for the form, but never the token.
@@ -107,5 +111,31 @@ final class SettingsController extends BaseController
         $model = $this->getModel('Integrationsettings', 'Administrator', ['ignore_request' => true]);
 
         return $model;
+    }
+
+    /**
+     * What a save changed of where the API token is sent, for the audit log (names and hosts only,
+     * never the token): "destination: zabbix_url, verify_tls; host: old.example -> new.example; token: replaced".
+     */
+    private static function changes(Settings $before, Settings $after): string
+    {
+        $parts   = [];
+        $changed = SettingsValidator::destinationChanges($before, $after);
+
+        if ($changed !== []) {
+            $parts[] = 'destination: ' . implode(', ', $changed);
+            $old     = (string) parse_url($before->apiUrl(), PHP_URL_HOST);
+            $new     = (string) parse_url($after->apiUrl(), PHP_URL_HOST);
+
+            if ($old !== $new) {
+                $parts[] = 'host: ' . ($old ?: '-') . ' -> ' . ($new ?: '-');
+            }
+        }
+
+        if ($before->get('api_token_enc') !== $after->get('api_token_enc')) {
+            $parts[] = 'token: ' . ($after->hasToken() ? 'replaced' : 'removed');
+        }
+
+        return implode('; ', $parts);
     }
 }

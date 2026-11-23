@@ -149,6 +149,11 @@ final class DataController extends BaseController
             $this->failed($e);
 
             return null;
+        } catch (\Throwable $e) {
+            // E.g. a database error: a JSON error without details, never Joomla's error page.
+            $this->crashed($e);
+
+            return null;
         }
     }
 
@@ -172,7 +177,7 @@ final class DataController extends BaseController
         $this->app->setHeader('X-Content-Type-Options', 'nosniff', true);
         $this->app->setHeader('status', (string) $status, true);
         $this->app->sendHeaders();
-        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
         $this->app->close();
     }
 }

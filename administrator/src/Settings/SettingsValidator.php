@@ -18,22 +18,77 @@ use ZabbixPortal\Component\Zabbix\Administrator\Security\KeyVaultException;
  * Turns the posted Integration Settings form into the values to store. Pure: no Joomla, no
  * database, so every rule is covered by unit tests.
  *
- * - A new API token is encrypted; an empty field keeps the stored one.
+ * - A new API token is encrypted; an empty field keeps the stored one, unless the destination the
+ *   token is sent to changes (address and port, Connect via, TLS verification, CA bundle): then
+ *   the token must be entered again, so the stored token is never sent to a new place by someone
+ *   who does not know it (a delegated administrator with only core.admin on com_zabbix).
  * - "Remove stored API token" deletes it.
  * - All errors are collected and returned as language keys.
  */
 final class SettingsValidator
 {
+    /** Settings that decide where the API token is sent. */
+    public const DESTINATION = ['zabbix_url', 'zabbix_port', 'connect_via', 'verify_tls', 'ca_bundle'];
+
     /** @var \Closure(string): bool */
     private \Closure $fileExists;
 
     /**
      * @param  \Closure(string, string): string  $encrypt     (plaintext, context) => ciphertext; may throw KeyVaultException
-     * @param  (\Closure(string): bool)|null     $fileExists  Injected for tests
+     * @param  (\Closure(string): bool)|null     $fileExists  CA bundle check, injected for tests
      */
     public function __construct(private readonly \Closure $encrypt, ?\Closure $fileExists = null)
     {
-        $this->fileExists = $fileExists ?? static fn (string $path): bool => is_file($path) && is_readable($path);
+        $this->fileExists = $fileExists ?? static fn (string $path): bool => self::isCaBundle($path);
+    }
+
+    /**
+     * A readable PEM file (.pem, .crt or .cer) that holds at least one certificate. Anything else
+     * (another file of the server, a directory) is refused, so the field cannot be used to probe
+     * for files.
+     */
+    public static function isCaBundle(string $path): bool
+    {
+        if (!preg_match('/\.(pem|crt|cer)$/i', $path) || !is_file($path) || !is_readable($path) || filesize($path) > 4 * 1024 * 1024) {
+            return false;
+        }
+
+        $pem = (string) file_get_contents($path);
+
+        if (!preg_match('/-----BEGIN CERTIFICATE-----.+?-----END CERTIFICATE-----/s', $pem, $m)) {
+            return false;
+        }
+
+        return !\function_exists('openssl_x509_read') || @openssl_x509_read($m[0]) !== false;
+    }
+
+    /**
+     * Destination settings that differ between two sets of settings (names from DESTINATION;
+     * address and port compared as the API address they make).
+     *
+     * @return list<string>
+     */
+    public static function destinationChanges(Settings $before, Settings $after): array
+    {
+        $changed = [];
+
+        if ($before->apiUrl() !== $after->apiUrl()) {
+            $changed[] = 'zabbix_url';
+        }
+
+        if ($before->connectVia() !== $after->connectVia()) {
+            $changed[] = 'connect_via';
+        }
+
+        if ($before->verifiesTls() !== $after->verifiesTls()) {
+            $changed[] = 'verify_tls';
+        }
+
+        if (trim($before->get('ca_bundle')) !== trim($after->get('ca_bundle'))) {
+            $changed[] = 'ca_bundle';
+        }
+
+        return $changed;
     }
 
     /**
@@ -43,7 +98,7 @@ final class SettingsValidator
      *
      * @throws ValidationFailed
      */
-    public function validate(array $input, Settings $current): array
+    public function validate(#[\SensitiveParameter] array $input, Settings $current): array
     {
         $errors = [];
         $values = [];
@@ -119,7 +174,7 @@ final class SettingsValidator
             $errors[] = 'COM_ZABBIX_SETTINGS_ERR_CA';
         }
 
-        $values['ca_bundle'] = $ca;
+        $values['ca_bundle'] = $ca !== '' && ($real = realpath($ca)) !== false ? $real : $ca;
 
         // Timeouts.
         $connect = self::int($input['connect_timeout'] ?? null);
@@ -187,6 +242,12 @@ final class SettingsValidator
 
         if ($url === '' && $hasToken) {
             $errors[] = 'COM_ZABBIX_SETTINGS_ERR_URL_REQUIRED';
+        }
+
+        // The stored token is only sent where it was entered for: a new destination needs it again.
+        if (!\array_key_exists('api_token_enc', $values) && $current->hasToken()
+            && self::destinationChanges($current, new Settings($values)) !== []) {
+            $errors[] = 'COM_ZABBIX_SETTINGS_ERR_TOKEN_AGAIN';
         }
 
         if ($errors !== []) {
