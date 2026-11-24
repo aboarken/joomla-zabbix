@@ -72,7 +72,7 @@ final class SettingsValidator
     {
         $changed = [];
 
-        if ($before->apiUrl() !== $after->apiUrl()) {
+        if (self::canonicalUrl($before->apiUrl()) !== self::canonicalUrl($after->apiUrl())) {
             $changed[] = 'zabbix_url';
         }
 
@@ -84,11 +84,28 @@ final class SettingsValidator
             $changed[] = 'verify_tls';
         }
 
-        if (trim($before->get('ca_bundle')) !== trim($after->get('ca_bundle'))) {
+        // The same file under another name (a symbolic link) is not a change.
+        $real = static fn (string $path): string => $path !== '' && ($r = realpath($path)) !== false ? $r : $path;
+
+        if ($real(trim($before->get('ca_bundle'))) !== $real(trim($after->get('ca_bundle')))) {
             $changed[] = 'ca_bundle';
         }
 
         return $changed;
+    }
+
+    /** scheme://host:port/path with the host in lower case and the default port written out. */
+    private static function canonicalUrl(string $url): string
+    {
+        $parts = parse_url($url);
+
+        if (!\is_array($parts) || !isset($parts['scheme'], $parts['host'])) {
+            return $url;
+        }
+
+        $scheme = strtolower($parts['scheme']);
+
+        return $scheme . '://' . strtolower($parts['host']) . ':' . ($parts['port'] ?? ($scheme === 'http' ? 80 : 443)) . ($parts['path'] ?? '');
     }
 
     /**
@@ -174,7 +191,8 @@ final class SettingsValidator
             $errors[] = 'COM_ZABBIX_SETTINGS_ERR_CA';
         }
 
-        $values['ca_bundle'] = $ca !== '' && ($real = realpath($ca)) !== false ? $real : $ca;
+        // Stored as entered: a symbolic link (e.g. a rotated certificate mount) keeps working.
+        $values['ca_bundle'] = $ca;
 
         // Timeouts.
         $connect = self::int($input['connect_timeout'] ?? null);

@@ -92,8 +92,7 @@ final class MemoryUserMapRepository implements UserMapRepositoryInterface
     {
         return array_values(array_map(
             static fn (UserMapping $m): int => $m->joomlaUserId,
-            array_filter($this->rows, static fn (UserMapping $m): bool => $m->zabbixUserId === $zabbixUserId
-                && \in_array($m->status, [UserMapping::STATUS_ACTIVE, UserMapping::STATUS_PENDING], true))
+            array_filter($this->rows, static fn (UserMapping $m): bool => $m->zabbixUserId === $zabbixUserId)
         ));
     }
 

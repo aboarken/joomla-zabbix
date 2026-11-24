@@ -75,7 +75,11 @@ each of them and links to its page in the Zabbix API documentation.
 
 ## Tests
 
-`tests/` runs without Joomla, a database or Zabbix: `FakeTransport` answers the API calls, and
-in-memory stand-ins replace the mapping table, cache and audit log (`tests/Support/Fakes.php`).
-The database classes, controllers, views and templates are not covered by unit tests. Run
-`vendor/bin/phpunit`.
+`tests/Unit` runs without Joomla, a database or Zabbix: `FakeTransport` answers the API calls,
+and in-memory stand-ins replace the mapping table, cache and audit log (`tests/Support/Fakes.php`).
+
+`tests/Integration` runs the database classes (settings, mappings, cache, audit log, rate limit)
+on SQLite, or on MySQL / PostgreSQL with the component's own install and uninstall scripts
+(`ZABBIX_TEST_MYSQL`, `ZABBIX_TEST_PGSQL`; CI runs both).
+
+Controllers, views and templates are not covered by automated tests. Run `vendor/bin/phpunit`.

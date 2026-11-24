@@ -12,6 +12,7 @@ use Joomla\CMS\Factory;
 use Joomla\CMS\Installer\InstallerAdapter;
 use Joomla\CMS\Installer\InstallerScriptInterface;
 use Joomla\CMS\Language\Text;
+use Joomla\Database\DatabaseInterface;
 use Joomla\DI\Container;
 use Joomla\DI\ServiceProviderInterface;
 
@@ -78,6 +79,18 @@ return new class () implements ServiceProviderInterface {
                 {
                     if ($type === 'install') {
                         Factory::getApplication()->enqueueMessage(Text::_('COM_ZABBIX_INSTALL_NEXT_STEPS'), 'info');
+                    }
+
+                    // Cached Zabbix answers (users, rights, dashboards) were written by the old
+                    // version: the new one reads them afresh, so a changed format or rule
+                    // applies at once.
+                    if ($type === 'update') {
+                        try {
+                            $db = Factory::getContainer()->get(DatabaseInterface::class);
+                            $db->setQuery($db->createQuery()->delete($db->quoteName('#__zabbix_cache')))->execute();
+                        } catch (\Throwable) {
+                            // The cache expires by itself (Cache (minutes) in Integration Settings).
+                        }
                     }
 
                     return true;

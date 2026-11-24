@@ -480,7 +480,7 @@
       };
 
       try {
-        // A request that hangs ends after REQUEST_TIMEOUT, so Refresh and auto-refresh go on.
+        // A request that hangs ends after 30 seconds (timeoutSignal), so Refresh and auto-refresh go on.
         const res = await fetch(`${cfg.endpoint}&dashboard=${encodeURIComponent(cfg.dashboard)}&widget=${encodeURIComponent(w.id)}${period}`, {
           credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token }, signal: P.timeoutSignal(),
         });

@@ -3,6 +3,29 @@
 All notable changes to `com_zabbix` are documented in this file.
 Versions follow the component manifest (`zabbix.xml`) and use [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] - 2026-11-24
+
+Second audit: a review of the 1.4.0 changes, the install and update lifecycle, and the database layer. See `docs/AUDIT.md`.
+
+### Security
+- **An automatic link to a Zabbix Super admin made by an older version is held.** 1.4.0 stopped new ones, but a link 1.3.x had made stayed active. It is now *Suspended* on that user's next visit until an administrator selects the user in User Mappings and clicks **Confirm**. Links an administrator made or confirmed are kept.
+- **A suspended user's Zabbix identity** is no longer matched automatically to another Joomla user.
+- **Rate limit of Test Connection and Find Endpoints**: each attempt is counted before Zabbix is called (requests sent at the same time could all pass before), and refused attempts are recorded in the audit log.
+
+### Fixed (in 1.4.0's changes)
+- **Host chart (host page)**: opening a second chart shortly before the first one's 30-second timeout showed *The data could not be loaded*.
+- **Rematch** no longer removes a link an administrator made by hand to a Zabbix Super admin or to a Zabbix user linked elsewhere.
+- **CA bundle given as a symbolic link**: it is stored as entered again (1.4.0 stored its target, which breaks rotated certificate mounts and could ask for the API token on every save).
+- **Integration Settings** no longer asks for the API token when the Zabbix address is only written differently (host in capitals, the default port written out).
+- **Users limited by problem tag filters** could get an empty or short problem list when few of the newest problems matched: the whole window of recent problems is read for them now.
+- One API call fewer per problem list: the extra host check runs only for triggers that use several hosts.
+
+### Changed
+- **Item values that are a point in time** (unit *unixtime*) are shown in the portal's time zone (the setting, else the user's, else the site's), as Zabbix shows them in the user's; they were shown in UTC.
+- **Right-to-left pages**: the drop-down arrow and the coloured edge of the cards follow the reading direction.
+- **Every update empties the component's cache**, so data cached by the old version is never read by the new one.
+- Database tests (`tests/Integration`): settings, user mappings, cache, audit log and rate limit, on SQLite and, in CI, on MySQL and PostgreSQL with the component's own install and uninstall scripts.
+
 ## [1.4.0] - 2026-11-23
 
 Full repository audit: architecture, standards, security, performance. See `docs/AUDIT.md`.

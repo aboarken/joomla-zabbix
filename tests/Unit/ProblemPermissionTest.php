@@ -78,6 +78,17 @@ final class ProblemPermissionTest extends TestCase
         self::assertSame(['DB slow', 'Web slow'], $this->names(new AccessScope('42', 'alice', 1, ['10'], tagFilters: ['10' => [['tag' => 'service', 'value' => '']]])));
         self::assertSame(['DB slow', 'Web slow'], $this->names(new AccessScope('42', 'alice', 1, ['10'], tagFilters: ['10' => [['tag' => '', 'value' => '']]])));
 
+        // As Zabbix's problem.get (CProblem::addTagFilterSqlParts): once the user's groups have
+        // tag filters, only host groups named in them show problems. A filter on another host
+        // group (11) does not open group 10.
+        self::assertSame([], $this->names(new AccessScope('42', 'alice', 1, ['10', '11'], tagFilters: ['11' => [['tag' => 'service', 'value' => 'db']]])));
+
+        // One trigger with one host: no extra host.get is needed to check its hosts.
+        $this->fake->calls = [];
+        $this->names(new AccessScope('42', 'alice', 1, ['10']));
+        self::assertSame(1, \count(array_keys($this->fake->methods(), 'host.get', true)), 'only for the trigger that uses two hosts');
+        self::assertSame(['1', '4'], $this->fake->lastParams('host.get')['hostids']);
+
         // The filters survive the scope cache.
         self::assertEquals($scope, AccessScope::fromArray($scope->toArray()));
     }

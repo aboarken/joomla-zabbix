@@ -17,6 +17,7 @@ use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\HostService;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\Period;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\ProblemService;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\ValueFormatter;
+use ZabbixPortal\Component\Zabbix\Administrator\Support\Formatter;
 use ZabbixPortal\Component\Zabbix\Tests\Support\FakeTransport;
 
 /**
@@ -229,6 +230,21 @@ final class MonitoringTest extends TestCase
 
         self::assertSame([2, 0], $hosts, 'web and hr; db is also in denied group 12 (Deny wins)');
         self::assertSame(['1', '3'], $this->fake->lastParams('item.get')['hostids'], 'items counted on the visible hosts only');
+    }
+
+    public function testUnixtimeValuesUseThePortalTimeZone(): void
+    {
+        $item = ['value_type' => '3', 'units' => 'unixtime'];
+
+        ValueFormatter::useTimezone(null);
+        self::assertSame('2027-01-15 08:00:00', ValueFormatter::format($item, '1800000000'), 'UTC until a time zone is set');
+
+        ValueFormatter::useTimezone(Formatter::zone('', 'Asia/Riyadh', 'UTC'));
+        self::assertSame('2027-01-15 11:00:00', ValueFormatter::format($item, '1800000000'));
+        ValueFormatter::useTimezone(null);
+
+        self::assertSame('Europe/Paris', Formatter::zone('Europe/Paris', 'Asia/Riyadh', 'UTC')->getName(), 'the setting wins');
+        self::assertSame('UTC', Formatter::zone('', '', 'Not/AZone')->getName());
     }
 
     public function testLongPeriodsReadTrends(): void

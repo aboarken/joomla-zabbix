@@ -70,12 +70,10 @@ final class DbUserMapRepository implements UserMapRepositoryInterface
 
     public function linkedTo(string $zabbixUserId): array
     {
-        $statuses = [UserMapping::STATUS_ACTIVE, UserMapping::STATUS_PENDING];
-        $query    = $this->db->createQuery()
+        $query = $this->db->createQuery()
             ->select($this->db->quoteName('joomla_user_id'))
             ->from($this->db->quoteName(self::TABLE))
             ->where($this->db->quoteName('zabbix_userid') . ' = :zid')
-            ->whereIn($this->db->quoteName('status'), $statuses, ParameterType::STRING)
             ->bind(':zid', $zabbixUserId);
 
         return array_map('intval', $this->db->setQuery($query)->loadColumn());

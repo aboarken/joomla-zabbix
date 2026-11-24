@@ -24,6 +24,25 @@ final class Formatter
     ) {
     }
 
+    /**
+     * The portal's time zone: the one of Integration Settings, else the user's, else the site's;
+     * UTC when none of them is a time zone.
+     */
+    public static function zone(string $setting, string $user, string $site): \DateTimeZone
+    {
+        foreach ([$setting, $user, $site] as $name) {
+            if (trim($name) !== '') {
+                try {
+                    return new \DateTimeZone(trim($name));
+                } catch (\Exception) {
+                    break;
+                }
+            }
+        }
+
+        return new \DateTimeZone('UTC');
+    }
+
     public function dateTime(int $timestamp): string
     {
         if ($timestamp <= 0) {

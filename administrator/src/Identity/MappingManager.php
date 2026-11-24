@@ -108,7 +108,7 @@ final class MappingManager
      * Match again by username / e-mail; the result becomes an automatic mapping. With "Wait for
      * administrator approval" a match is stored as pending, to be confirmed.
      *
-     * @return string UserMatcher::MATCHED, AMBIGUOUS or NOT_FOUND, or 'pending'
+     * @return string UserMatcher::MATCHED, AMBIGUOUS, NOT_FOUND or PROTECTED, or 'pending'
      */
     public function rematch(int $joomlaUserId, string $username, string $email, int $actorId): string
     {
@@ -116,6 +116,15 @@ final class MappingManager
 
         // A protected Zabbix user (Super admin, or linked to someone else) is linked by hand only.
         if ($result === UserMatcher::PROTECTED) {
+            $existing = $this->repository->find($joomlaUserId);
+
+            // Already linked to that very user (by an administrator): nothing to redo.
+            if ($existing !== null && $existing->isActive() && $existing->zabbixUserId === $user?->userid) {
+                $this->audit->record($joomlaUserId, 'mapping.rematch', AuditLogInterface::RESULT_OK, 'kept', $actorId);
+
+                return UserMatcher::MATCHED;
+            }
+
             $user = null;
         }
 

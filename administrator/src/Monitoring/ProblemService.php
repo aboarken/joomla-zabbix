@@ -75,7 +75,9 @@ final class ProblemService
             'recent'    => false,
             'sortfield' => ['eventid'],
             'sortorder' => 'DESC',
-            'limit'     => max(1, min(self::MAX, $limit * 2)),
+            // Read more than asked for: some are left out below. With tag filters most can be,
+            // so the whole window is read.
+            'limit'     => $scope->tagFilters !== [] && !$scope->all() ? self::MAX : max(1, min(self::MAX, $limit * 2)),
         ];
 
         if ($groups !== null) {
@@ -198,9 +200,19 @@ final class ProblemService
     private function hostGroups(array $triggers): array
     {
         $hostIds = [];
+        $groups  = [];
 
         foreach ($triggers as $trigger) {
-            foreach ((array) ($trigger['hosts'] ?? []) as $host) {
+            $hosts = (array) ($trigger['hosts'] ?? []);
+
+            // One host: the trigger's host groups are that host's groups (no call needed).
+            if (\count($hosts) === 1) {
+                $groups[(string) ($hosts[0]['hostid'] ?? '')] = array_map(static fn ($g): string => (string) ($g['groupid'] ?? ''), (array) ($trigger['hostgroups'] ?? []));
+
+                continue;
+            }
+
+            foreach ($hosts as $host) {
                 $hostIds[(string) ($host['hostid'] ?? '')] = true;
             }
         }
@@ -208,7 +220,7 @@ final class ProblemService
         unset($hostIds['']);
 
         if ($hostIds === []) {
-            return [];
+            return $groups;
         }
 
         $hosts  = $this->client->call('host.get', [
@@ -216,7 +228,6 @@ final class ProblemService
             'hostids'          => array_map('strval', array_keys($hostIds)),
             'selectHostGroups' => ['groupid'],
         ]);
-        $groups = [];
 
         foreach (\is_array($hosts) ? $hosts : [] as $host) {
             if (\is_array($host) && isset($host['hostid'])) {

@@ -17,6 +17,7 @@ use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\SeverityColours;
+use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\ValueFormatter;
 use ZabbixPortal\Component\Zabbix\Administrator\Settings\Settings;
 use ZabbixPortal\Component\Zabbix\Administrator\Support\ComponentAccess;
 use ZabbixPortal\Component\Zabbix\Administrator\Support\Formatter;
@@ -65,18 +66,15 @@ abstract class PortalModel extends BaseDatabaseModel
     public function formatter(): Formatter
     {
         $settings = $this->settings();
-        $zone     = $settings->displayTimezone();
+        $app      = Factory::getApplication();
+        $tz       = Formatter::zone(
+            $settings->displayTimezone(),
+            (string) $app->getIdentity()?->getParam('timezone', ''),
+            (string) $app->get('offset', 'UTC')
+        );
 
-        if ($zone === '') {
-            $user = Factory::getApplication()->getIdentity();
-            $zone = (string) ($user?->getParam('timezone', '') ?: Factory::getApplication()->get('offset', 'UTC'));
-        }
-
-        try {
-            $tz = new \DateTimeZone($zone);
-        } catch (\Exception) {
-            $tz = new \DateTimeZone('UTC');
-        }
+        // Item values that are a point in time ("unixtime") use the same time zone.
+        ValueFormatter::useTimezone($tz);
 
         return new Formatter($tz, $settings->dateFormat(), $settings->timeFormat());
     }
