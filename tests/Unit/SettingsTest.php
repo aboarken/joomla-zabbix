@@ -81,6 +81,9 @@ final class SettingsTest extends TestCase
         // Other settings can change without the token.
         $values = self::validator()->validate(self::form(['cache_minutes' => '10', 'zabbix_url' => 'https://zabbix.example.org/']), $stored);
         self::assertArrayNotHasKey('api_token_enc', $values);
+        // The same destination written differently is not a change.
+        self::assertSame([], SettingsValidator::destinationChanges($stored, new Settings(['zabbix_url' => 'https://ZABBIX.example.org:443/', 'verify_tls' => '1'])));
+
         self::assertSame(['zabbix_url', 'connect_via'], SettingsValidator::destinationChanges($stored, new Settings(['zabbix_url' => 'https://other.example.org', 'connect_via' => '10.0.0.1'])));
     }
 
@@ -100,6 +103,17 @@ final class SettingsTest extends TestCase
 
         if ($system !== []) {
             self::assertTrue(SettingsValidator::isCaBundle($system[0]), 'the system CA bundle is accepted');
+        }
+
+        if ($system !== [] && @symlink($system[0], $dir . '/link.pem')) {
+            // A symbolic link is stored as entered, and is the same destination as its target.
+            $validator = new SettingsValidator(static fn (string $p, string $c): string => 'enc');
+            $values    = $validator->validate(self::form(['ca_bundle' => $dir . '/link.pem', 'api_token' => self::TOKEN]), new Settings());
+            self::assertSame($dir . '/link.pem', $values['ca_bundle']);
+            self::assertSame([], SettingsValidator::destinationChanges(
+                new Settings(['zabbix_url' => 'https://z.example.org', 'ca_bundle' => $dir . '/link.pem']),
+                new Settings(['zabbix_url' => 'https://z.example.org', 'ca_bundle' => $system[0]])
+            ));
         }
 
         array_map('unlink', glob($dir . '/*'));

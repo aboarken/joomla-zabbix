@@ -24,6 +24,29 @@ final class Formatter
     ) {
     }
 
+    /**
+     * The portal's time zone: the one of Integration Settings, else the user's, else the site's;
+     * UTC when none of them is a time zone.
+     */
+    public static function zone(string $setting, string $user, string $site): \DateTimeZone
+    {
+        foreach ([$setting, $user, $site] as $name) {
+            if (trim($name) !== '') {
+                // timezone_open() answers false for an unknown zone; no exception is involved
+                // (with Xdebug loaded, PHP 8.3's DateInvalidTimeZoneException raises an Error).
+                $zone = @timezone_open(trim($name));
+
+                if ($zone === false) {
+                    break;
+                }
+
+                return $zone;
+            }
+        }
+
+        return new \DateTimeZone('UTC');
+    }
+
     public function dateTime(int $timestamp): string
     {
         if ($timestamp <= 0) {

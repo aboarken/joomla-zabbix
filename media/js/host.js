@@ -44,15 +44,16 @@
       seq += 1;
       const my = seq;
       pending?.abort();
-      pending = new AbortController();
-      const timeout = P.timeoutSignal();
-      timeout.addEventListener('abort', () => pending?.abort(), { once: true });
+      // This request's own controller: its timeout must not end a later request.
+      const controller = new AbortController();
+      pending = controller;
+      P.timeoutSignal().addEventListener('abort', () => controller.abort(), { once: true });
 
       body.replaceChildren(P.el('p', { class: 'zbx-loading', text: P.t('COM_ZABBIX_JS_LOADING', 'Loading…') }));
 
       try {
         const url = `${cfg.endpoint}&host=${encodeURIComponent(cfg.host)}&item=${encodeURIComponent(itemId)}&period=${encodeURIComponent(period.value)}`;
-        const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token }, signal: pending.signal });
+        const res = await fetch(url, { credentials: 'same-origin', headers: { Accept: 'application/json', 'X-CSRF-Token': cfg.token }, signal: controller.signal });
         const json = await res.json();
 
         if (my !== seq) {

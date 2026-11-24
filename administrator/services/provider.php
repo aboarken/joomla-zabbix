@@ -82,7 +82,7 @@ return new class () implements ServiceProviderInterface {
         );
         $container->alias(AuditLogInterface::class, DbAuditLog::class);
 
-        $container->share(RateLimiter::class, static fn (Container $c): RateLimiter => new RateLimiter($c->get(DbAuditLog::class)));
+        $container->share(RateLimiter::class, static fn (Container $c): RateLimiter => new RateLimiter($c->get(DbAuditLog::class), $c->get(DbAuditLog::class)));
 
         $container->share(
             CacheInterface::class,

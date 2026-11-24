@@ -20,7 +20,8 @@ interface UserMapRepositoryInterface
     public function delete(int $joomlaUserId): void;
 
     /**
-     * Joomla users linked to a Zabbix user (active or waiting for approval).
+     * Joomla users whose mapping names a Zabbix user, whatever its status (active, waiting for
+     * approval or suspended).
      *
      * @return list<int>
      */

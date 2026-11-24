@@ -95,7 +95,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 | D5 | Widget height could reach past the grid. | Fixed. |
 | D6 | `EndpointsController` used the deprecated `getQuery(true)`. | Fixed (`createQuery()`). |
 | D7 | A reviewer suspected `dashboard.get` rejects `sortfield: name`. | Not an issue: `CDashboard::$sortColumns` is `['dashboardid', 'name']`. |
-| D8 | `unixtime` values are shown in UTC; Zabbix uses the user's time zone. | Open (Low), documented. |
+| D8 | `unixtime` values are shown in UTC; Zabbix uses the user's time zone. | Fixed in 1.4.1. |
 | D9 | Problem counts come from at most 2000 recent problems. | Open (Low), documented. |
 
 ## 5. Security assessment
@@ -113,7 +113,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md).
 | S9 | Low | Unexpected errors in the data controller's scope check could reach Joomla's error page. | `site/src/Controller/DataController.php` | Fixed (JSON error). |
 | S10 | Low | JSON robustness: no depth limit, and an array-valued `error.data` raised a warning. | `Api/JsonRpcClient.php` | Fixed. |
 | S11 | Low | `http://` and TLS-off are allowed. | Settings | Open by design: warnings are shown, TLS is on by default. |
-| S12 | Low | The rate limit for Test Connection and Find Endpoints counts finished attempts, so parallel requests can exceed it. | `Security/RateLimiter.php` | Open (administrators only). |
+| S12 | Low | The rate limit for Test Connection and Find Endpoints counts finished attempts, so parallel requests can exceed it. | `Security/RateLimiter.php` | Fixed in 1.4.1. |
 | S13 | Info | The KeyVault format has no key id; changing Joomla's secret makes the token unreadable. | `Security/KeyVault.php` | Open, documented (enter the token again). |
 | S14 | Info | `cache_key` uses a case-insensitive collation on MySQL. Current keys cannot collide. | SQL | Open. |
 | S15 | Info | Mappings of deleted Joomla users stay until removed. | Identity | Open, documented. |
@@ -301,3 +301,70 @@ All of these were actually run, in this environment:
 4. Group the API calls of one dashboard (or a short shared cache for live data).
 5. Record an *attempt* row before Test Connection and Find Endpoints call Zabbix (rate limit).
 6. Show `unixtime` values in the user's time zone. Show "2000+" when problem counts are capped.
+
+---
+
+# Second audit: 1.4.0 → 1.4.1
+
+Date: 2026-11-24. Scope: an independent review of the 1.4.0 change set, the install, update and
+uninstall lifecycle, the database layer, and the items the first audit left open.
+
+## Findings in the 1.4.0 changes
+
+| # | Severity | Finding | Status |
+|---|---|---|---|
+| R1 | Medium | **Protection not retroactive.** A Super admin link that 1.3.x made automatically stayed active after the update. | Fixed: suspended on the next visit until an administrator confirms it (`IdentityResolver`). |
+| R2 | Medium | **Rematch destroyed manual links.** Rematch on a user linked by hand to a protected Zabbix user overwrote the link with *Not found*. | Fixed (`MappingManager::rematch`). |
+| R3 | Medium | **Wrong request aborted.** On the host page, the first chart's 30 s timeout aborted a chart opened later. Reproduced in Chromium. | Fixed (`host.js`: one controller per request). |
+| R4 | Medium | **CA bundle as a symbolic link.** 1.4.0 stored the link's target. That breaks rotated mounts and could ask for the token on every save. | Fixed: stored as entered, compared by real path. |
+| R5 | Medium | **Tag filters applied after the read limit.** A user whose filters match few problems could get an empty list. | Fixed: the whole window (2000) is read for such users. |
+| R6 | Low | Same address written differently (host case, explicit default port) asked for the token. | Fixed (canonical comparison). |
+| R7 | Low | A suspended user's Zabbix identity could be matched automatically to someone else. | Fixed (`linkedTo` counts every status). |
+| R8 | Low | An extra `host.get` for every problem list. | Fixed: only for triggers that use several hosts. |
+| R9 | Low | Two audit rows per retry for a protected user; three stale comments. | Fixed. |
+
+**Reviewed and kept: the tag filter rule.** The reviewer expected a host group without a tag
+filter to stay fully visible when another host group has one. Zabbix's own query
+(`CProblem::addTagFilterSqlParts()`, release/7.4) restricts problems to the host groups named in
+the user's tag filters once any filter exists. The portal does the same, and a test now states
+this. This rule can only hide problems, never show more than Zabbix would. Sites that use tag
+filters should compare a limited user's problem list with Zabbix once.
+
+## Lifecycle and database
+
+- **Manifest:** `method="upgrade"`, namespace, SQL install, update and uninstall for both
+  databases, update server with SHA-256, `targetplatform` and `php_minimum`. No issue found.
+- **Installer script:** it checks PHP, Joomla, OpenSSL (AES-256-GCM) and cURL. **Added:** every
+  update empties `#__zabbix_cache`, so data cached by an older version is never read by newer
+  code.
+- **Install scripts:** running one twice (an update over an installation) is safe
+  (`IF NOT EXISTS`), and uninstall removes all four tables. Verified on PostgreSQL 16.
+- **Rate limiter (S12):** attempts are now written before the work and counted; refusals are
+  recorded.
+- **Right-to-left pages:** two physical CSS properties replaced by logical ones (checked in
+  Chromium with `dir="rtl"`).
+
+## Tests performed (actually run)
+
+- **PHPUnit:** 126 tests, 919 assertions, all passing. This includes 4 new database tests
+  (settings, mappings, cache isolation and expiry, audit scrubbing, rate limit).
+- **PostgreSQL 16.15** (a local server): the database tests ran with the shipped install and
+  uninstall scripts and passed.
+- **MySQL:** not available locally. The CI workflow now runs the same tests on the runner's
+  MySQL and PostgreSQL, so the pull request's check is the MySQL result.
+- **Chromium:**
+  - R3: 1.4.0 shows the error, 1.4.1 draws the chart;
+  - RTL positions of the drop-down arrow and card edge.
+- **Static and build checks:** `php -l`, `node --check`, `composer audit`, language keys, package
+  verification.
+
+## Still open
+
+- **Tests:** controllers, views and templates have no automated tests. There is no live Joomla
+  or Zabbix test, and no PHPStan run.
+- **Deleted Joomla users:** their mappings stay until removed. Removing them automatically needs
+  a `user` plugin, which means shipping the extension as a package: a packaging decision.
+- **Problem counts:** read from at most 2000 recent problems.
+- **System information:** with a denied group it sends every visible host id.
+- **Dashboard API calls:** not grouped across widgets.
+- **Earlier open items:** S11, S13 and S14 from the first audit.

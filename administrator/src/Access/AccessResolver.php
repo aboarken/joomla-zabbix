@@ -18,7 +18,7 @@ use ZabbixPortal\Component\Zabbix\Administrator\Identity\DirectoryUser;
  * Host group permissions (usergroup.get, selectHostGroupRights): 0 = deny, 2 = read,
  * 3 = read-write. A group denied through any user group is denied; otherwise the highest
  * permission counts. A user in a disabled user group (users_status = 1) is disabled.
- * Tag-based permissions are not applied (see README, Limitations).
+ * The groups' problem tag filters are collected per host group (AccessScope::allowsTags()).
  */
 final class AccessResolver
 {

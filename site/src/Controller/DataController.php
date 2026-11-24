@@ -18,6 +18,8 @@ use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Api\ZabbixException;
 use ZabbixPortal\Component\Zabbix\Administrator\Dashboard\DashboardLayout;
 use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\Period;
+use ZabbixPortal\Component\Zabbix\Administrator\Monitoring\ValueFormatter;
+use ZabbixPortal\Component\Zabbix\Administrator\Support\Formatter;
 
 /**
  * JSON data for the portal pages' scripts:
@@ -143,6 +145,13 @@ final class DataController extends BaseController
 
                 return null;
             }
+
+            // Widget values that are a point in time are shown in the portal's time zone.
+            ValueFormatter::useTimezone(Formatter::zone(
+                $this->zabbix()->getSettingsRepository()->load()->displayTimezone(),
+                (string) $user->getParam('timezone', ''),
+                (string) $this->app->get('offset', 'UTC')
+            ));
 
             return $this->zabbix()->getAccessService()->scopeFor($identity->zabbixUser);
         } catch (ZabbixException $e) {

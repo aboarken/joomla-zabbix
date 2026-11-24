@@ -16,7 +16,8 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Monitoring;
  * - Units follow the number after a space ("58.19 %", "42.00 °C").
  * - K/M/G/T/P prefixes, with 1024 for B and Bps; no prefix for %, ms, rpm, RPM, and for units
  *   that start with "!" (the "!" is not shown).
- * - "uptime": "64 days, 01:54:51"; "s": the 3 largest units ("1h 38m 51s"); "unixtime": a date.
+ * - "uptime": "64 days, 01:54:51"; "s": the 3 largest units ("1h 38m 51s"); "unixtime": a date and
+ *   time in the time zone given with useTimezone() (the portal user's).
  * - Widgets pass their "Decimal places", applied to float and integer items alike, with trailing
  *   zeros ("1.00"), as Zabbix's widgets do (decimals_exact); elsewhere Zabbix shows up to 4
  *   decimals without trailing zeros (2 with a prefix), and integers without decimals.
@@ -25,6 +26,15 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Monitoring;
 final class ValueFormatter
 {
     private const PREFIXES = ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z', 'Y'];
+
+    /** Time zone of "unixtime" values (the portal user's; UTC until set). */
+    private static ?\DateTimeZone $zone = null;
+
+    /** Show "unixtime" values in this time zone, as Zabbix shows them in the user's. */
+    public static function useTimezone(?\DateTimeZone $zone): void
+    {
+        self::$zone = $zone;
+    }
 
     /** value_type: 0 float, 1 character, 2 log, 3 unsigned, 4 text, 5 binary. */
     public static function isNumeric(int|string $valueType): bool
@@ -86,7 +96,7 @@ final class ValueFormatter
         $units = trim($units);
 
         if ($units === 'unixtime') {
-            return [gmdate('Y-m-d H:i:s', (int) $value), ''];
+            return [(new \DateTimeImmutable('@' . (int) $value))->setTimezone(self::$zone ?? new \DateTimeZone('UTC'))->format('Y-m-d H:i:s'), ''];
         }
 
         if ($units === 'uptime') {

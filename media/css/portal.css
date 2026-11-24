@@ -65,11 +65,11 @@
 
 /* Summary cards */
 .zbx-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .75rem; margin: 0 0 1.25rem; }
-.zbx-card { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.125rem; color: inherit; text-decoration: none; background: var(--zbx-card-bg); border: 1px solid var(--zbx-border); border-left: 4px solid var(--zbx-tone, var(--zbx-primary)); border-radius: .75rem; box-shadow: var(--zbx-shadow); }
+.zbx-card { display: flex; flex-direction: column; gap: .25rem; padding: 1rem 1.125rem; color: inherit; text-decoration: none; background: var(--zbx-card-bg); border: 1px solid var(--zbx-border); border-inline-start: 4px solid var(--zbx-tone, var(--zbx-primary)); border-radius: .75rem; box-shadow: var(--zbx-shadow); }
 a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fafc); }
 .zbx-card__value { font-size: 1.75rem; font-weight: 700; line-height: 1.1; color: var(--zbx-tone, inherit); }
 .zbx-card__label { font-size: .875rem; color: var(--zbx-muted); }
-.zbx-card--sev { border-left-color: var(--zbx-sev); }
+.zbx-card--sev { border-inline-start-color: var(--zbx-sev); }
 .zbx-card--sev .zbx-card__value { color: inherit; }
 .zbx-sev-card-0 { --zbx-sev: var(--zbx-sev-0); } .zbx-sev-card-1 { --zbx-sev: var(--zbx-sev-1); } .zbx-sev-card-2 { --zbx-sev: var(--zbx-sev-2); }
 .zbx-sev-card-3 { --zbx-sev: var(--zbx-sev-3); } .zbx-sev-card-4 { --zbx-sev: var(--zbx-sev-4); } .zbx-sev-card-5 { --zbx-sev: var(--zbx-sev-5); }
@@ -332,12 +332,12 @@ a.zbx-card:hover { text-decoration: none; background: var(--zbx-tone-soft, #f8fa
    text clear of it (whatever arrow or padding the template gives selects). */
 .com-zabbix .zbx-select-wrap { position: relative; display: inline-flex; max-width: 100%; }
 .com-zabbix .zbx-select-wrap::after {
-  position: absolute; top: 50%; right: 1rem; width: .5rem; height: .5rem; margin-top: -.375rem;
+  position: absolute; top: 50%; inset-inline-end: 1rem; width: .5rem; height: .5rem; margin-top: -.375rem;
   pointer-events: none; content: ""; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
   opacity: .7; transform: rotate(45deg);
 }
 .com-zabbix .zbx-select-wrap > .zbx-select {
-  width: 100%; padding-right: 2.75rem; background-image: none;
+  width: 100%; padding-inline-end: 2.75rem; background-image: none;
   -webkit-appearance: none; -moz-appearance: none; appearance: none;
 }
 .com-zabbix .zbx-select-wrap > .zbx-select::-ms-expand { display: none; }

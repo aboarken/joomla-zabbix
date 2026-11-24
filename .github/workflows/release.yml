@@ -67,8 +67,23 @@ jobs:
       - name: Install test tools (development only; not part of the package)
         run: composer install --no-interaction --no-progress --prefer-dist
 
-      - name: Run automated tests (fake database; no Zabbix server needed)
+      - name: Run automated tests (fake Zabbix API; database classes on SQLite)
         run: vendor/bin/phpunit
+
+      # The runner's own MySQL and PostgreSQL: the install and uninstall scripts are run exactly
+      # as shipped, and the database classes against the tables they make.
+      - name: Run database tests on MySQL
+        run: |
+          sudo systemctl start mysql.service
+          mysql -uroot -proot -e 'CREATE DATABASE IF NOT EXISTS zbxtest'
+          ZABBIX_TEST_MYSQL='host=127.0.0.1;user=root;password=root;database=zbxtest' vendor/bin/phpunit --testsuite integration
+
+      - name: Run database tests on PostgreSQL
+        run: |
+          sudo systemctl start postgresql.service
+          sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres'"
+          sudo -u postgres psql -c 'CREATE DATABASE zbxtest'
+          ZABBIX_TEST_PGSQL='host=127.0.0.1;port=5432;user=postgres;password=postgres;database=zbxtest' vendor/bin/phpunit --testsuite integration
 
       - name: Build package
         run: |

@@ -72,7 +72,7 @@ final class SettingsController extends BaseController
 
         $audit = $this->component()->getAuditLog();
 
-        if (!$this->component()->getRateLimiter()->allow($this->actorId(), 'settings.test', self::TESTS_PER_HOUR)) {
+        if (!$this->component()->getRateLimiter()->attempt($this->actorId(), 'settings.test', self::TESTS_PER_HOUR)) {
             $this->app->enqueueMessage(Text::_('COM_ZABBIX_ERROR_TOO_MANY_TESTS'), 'warning');
             $this->setRedirect(Route::_(self::URL, false));
 

@@ -11,6 +11,7 @@ namespace ZabbixPortal\Component\Zabbix\Administrator\Identity;
 // phpcs:enable PSR1.Files.SideEffects
 
 use Psr\Log\LoggerInterface;
+use ZabbixPortal\Component\Zabbix\Administrator\Access\AccessScope;
 use ZabbixPortal\Component\Zabbix\Administrator\Audit\AuditLogInterface;
 
 /**
@@ -18,6 +19,9 @@ use ZabbixPortal\Component\Zabbix\Administrator\Audit\AuditLogInterface;
  *
  * - An active mapping is used as long as its Zabbix user still exists.
  * - A suspended mapping always blocks the portal.
+ * - An automatic link to a Zabbix Super admin (made before 1.4.0) is suspended until an
+ *   administrator confirms it; automatic matching never links Super admins, or a Zabbix user
+ *   named by another Joomla user's mapping.
  * - Without a usable mapping, and with automatic matching on, the user is matched by username
  *   and/or e-mail (UserMatcher) and the result is stored; a failed match is tried again after
  *   RETRY_MINUTES. Mappings an administrator made are never replaced automatically.
@@ -85,6 +89,18 @@ final class IdentityResolver
         if ($mapping !== null && $mapping->isActive()) {
             $user = $this->directory()->find((string) $mapping->zabbixUserId);
 
+            // A Super admin link made by automatic matching (before 1.4.0 allowed it): held
+            // until an administrator confirms it in User Mappings. Links an administrator made
+            // or confirmed are kept.
+            if ($user !== null && $user->roleType === AccessScope::ROLE_SUPER_ADMIN && $mapping->source === UserMapping::SOURCE_AUTO) {
+                $mapping = $mapping->with(['status' => UserMapping::STATUS_SUSPENDED, 'checkedAt' => ($this->clock)()]);
+                $this->repository->save($mapping);
+                $this->audit->record($joomlaUserId, 'identity.suspended', AuditLogInterface::RESULT_OK, 'super_admin_auto_match zabbix_user:' . $user->userid);
+                $this->logger->notice(\sprintf('Joomla user %d: automatic link to a Zabbix Super admin suspended until confirmed', $joomlaUserId));
+
+                return new Identity($joomlaUserId, $mapping);
+            }
+
             if ($user !== null) {
                 return new Identity($joomlaUserId, $mapping, $user);
             }
@@ -109,9 +125,11 @@ final class IdentityResolver
         [$result, $user] = (new UserMatcher())->matchFor($joomlaUserId, $username, $email, $this->directory()->all(), $this->matchMode, $this->repository);
         $pending         = $result === UserMatcher::MATCHED && !$this->autoApprove;
 
-        // A protected Zabbix user (Super admin, or linked to someone else) is not linked.
-        if ($result === UserMatcher::PROTECTED) {
-            $this->audit->record($joomlaUserId, 'identity.protected', AuditLogInterface::RESULT_OK, 'zabbix_user:' . $user?->userid);
+        // A protected Zabbix user (Super admin, or linked to someone else) is not linked; the
+        // audit entry below names it ("protected zabbix_user:N").
+        $protected = $result === UserMatcher::PROTECTED ? $user : null;
+
+        if ($protected !== null) {
             $user = null;
         }
 
@@ -132,7 +150,7 @@ final class IdentityResolver
         );
 
         $this->repository->save($mapping);
-        $this->audit->record($joomlaUserId, $pending ? 'identity.pending' : 'identity.match', AuditLogInterface::RESULT_OK, $result . ($user !== null ? ' zabbix_user:' . $user->userid : ''));
+        $this->audit->record($joomlaUserId, $pending ? 'identity.pending' : 'identity.match', AuditLogInterface::RESULT_OK, $result . (($user ?? $protected) !== null ? ' zabbix_user:' . ($user ?? $protected)->userid : ''));
 
         // A pending user is not linked yet: no Zabbix user until an administrator confirms it.
         return new Identity($joomlaUserId, $mapping, $pending ? null : $user);

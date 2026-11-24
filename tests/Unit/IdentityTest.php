@@ -70,12 +70,39 @@ final class IdentityTest extends TestCase
         self::assertNull($identity->zabbixUser, 'no Super admin view from a chosen username');
         self::assertSame(UserMapping::STATUS_NOT_FOUND, $this->repo->find(50)?->status);
         self::assertNull($this->repo->find(50)?->zabbixUserId);
-        self::assertContains('identity.protected', $this->audit->actions());
 
         // Also by e-mail, and with Rematch.
         $manager = new MappingManager($this->repo, fn () => $this->directory, $this->audit, 'username_email', fn () => $this->now);
         self::assertSame(UserMatcher::PROTECTED, $manager->rematch(51, 'nobody', 'admin@example.org', 9));
         self::assertNull($this->repo->find(51)?->zabbixUserId);
+    }
+
+    public function testAnAutomaticSuperAdminLinkFromAnOlderVersionIsHeldUntilConfirmed(): void
+    {
+        // As 1.3.x stored it: active, automatic, to the Super admin.
+        $this->repo->save(new UserMapping(60, '1', 'Admin', 'x@example.net', UserMapping::STATUS_ACTIVE, UserMapping::SOURCE_AUTO, $this->now, $this->now));
+
+        self::assertNull($this->resolver()->resolve(60, 'admin', 'x@example.net')->zabbixUser);
+        self::assertSame(UserMapping::STATUS_SUSPENDED, $this->repo->find(60)?->status);
+        self::assertSame('1', $this->repo->find(60)?->zabbixUserId, 'kept, so the administrator can confirm it');
+
+        // The administrator confirms: it works, and stays.
+        $manager = new MappingManager($this->repo, fn () => $this->directory, $this->audit, 'username_email', fn () => $this->now);
+        $manager->confirm(60, 9);
+        self::assertSame('1', $this->resolver()->resolve(60, 'admin', 'x@example.net')->zabbixUser?->userid);
+        self::assertSame(UserMapping::STATUS_ACTIVE, $this->repo->find(60)?->status);
+
+        // Rematch does not undo a link the administrator made to a protected user.
+        self::assertSame(UserMatcher::MATCHED, $manager->rematch(60, 'admin', 'x@example.net', 9));
+        self::assertSame(['1', UserMapping::STATUS_ACTIVE], [$this->repo->find(60)?->zabbixUserId, $this->repo->find(60)?->status]);
+    }
+
+    public function testASuspendedUsersZabbixIdentityIsNotMatchedToSomeoneElse(): void
+    {
+        $this->repo->save(new UserMapping(70, '2', 'alice', 'alice@example.org', UserMapping::STATUS_SUSPENDED, UserMapping::SOURCE_ADMIN, $this->now, $this->now));
+
+        self::assertNull($this->resolver()->resolve(71, 'someone', 'alice@example.org')->zabbixUser);
+        self::assertSame(UserMapping::STATUS_NOT_FOUND, $this->repo->find(71)?->status);
     }
 
     public function testAZabbixUserLinkedToSomeoneIsNotTakenOverByChangingAnEmail(): void

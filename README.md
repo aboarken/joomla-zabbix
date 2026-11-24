@@ -208,6 +208,13 @@ Install the new package over the old one, or use **System → Update → Extensi
 mappings and the API token are kept, and the database update files run by themselves. Then press
 **Clear Cache** in Integration Settings.
 
+From **1.4.1**:
+
+- **A Zabbix Super admin linked automatically by an older version** is *Suspended* on that user's
+  next visit, until you select the user in User Mappings and click **Confirm**. Links you made or
+  confirmed yourself are kept. (Since 1.4.0 Super admins are never linked automatically.)
+- The component's cache is emptied by every update.
+
 From **1.4.0**:
 
 - **Saving Integration Settings** with a changed Zabbix address, port, Connect via, TLS
@@ -246,7 +253,8 @@ page load and widget refresh.
 - Only read methods: the client refuses any other method before sending anything.
 - Redirects are not followed, so the token can't be sent to another host. TLS is verified by
   default.
-- Rate limits apply to Test Connection and Find Endpoints. An audit log (`#__zabbix_audit`)
+- Rate limits apply to Test Connection and Find Endpoints; each attempt is counted before Zabbix
+  is called, and refused attempts are recorded. An audit log (`#__zabbix_audit`)
   records setting changes, mapping changes, tests and automatic matches.
 - Portal pages are sent with `no-store` and `noindex`. They work with a strict Content Security
   Policy (no inline scripts that run, no inline styles).
@@ -266,7 +274,6 @@ page load and widget refresh.
 
 - Problem counts (Problems by severity, host problem counts) are read from at most 2000 recent
   problems; on a very large Zabbix they can be lower than Zabbix's.
-- *unixtime* item values are shown in UTC.
 - Widgets that take their hosts or items from another widget (Zabbix "widget references") show
   their own configured hosts or items, or all the user may see.
 - Map-type and some other widgets are not drawn (see above).
@@ -286,13 +293,18 @@ page load and widget refresh.
 
 ```bash
 composer install          # PHPUnit and test dependencies (not part of the package)
-vendor/bin/phpunit        # unit tests: no Joomla and no Zabbix server needed
+vendor/bin/phpunit        # unit tests (fake Zabbix API) and database tests on SQLite
 build/build-package.sh    # dist/com_zabbix-<version>.zip
 python3 build/verify-package.py dist/com_zabbix-<version>.zip <version>
 ```
 
-The GitHub workflow (`.github/workflows/release.yml`) lints, tests, builds and verifies the
-package on every push and pull request. When a release `v<version>` is published, it attaches
+The database tests (`tests/Integration`) run on SQLite by default. To run them on a real server
+with the component's own install and uninstall scripts, set `ZABBIX_TEST_MYSQL` or
+`ZABBIX_TEST_PGSQL`, e.g.
+`ZABBIX_TEST_PGSQL='host=127.0.0.1;port=5432;user=postgres;password=…;database=zbxtest' vendor/bin/phpunit --testsuite integration`.
+
+The GitHub workflow (`.github/workflows/release.yml`) lints, tests (also on MySQL and PostgreSQL),
+builds and verifies the package on every push and pull request. When a release `v<version>` is published, it attaches
 `com_zabbix.zip`, `updates.xml` and `changelog.xml` to it.
 
 How the component is built (components, request flows, permission model, caching, API methods,
