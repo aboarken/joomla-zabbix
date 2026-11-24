@@ -32,11 +32,15 @@ final class Formatter
     {
         foreach ([$setting, $user, $site] as $name) {
             if (trim($name) !== '') {
-                try {
-                    return new \DateTimeZone(trim($name));
-                } catch (\Exception) {
+                // timezone_open() answers false for an unknown zone; no exception is involved
+                // (with Xdebug loaded, PHP 8.3's DateInvalidTimeZoneException raises an Error).
+                $zone = @timezone_open(trim($name));
+
+                if ($zone === false) {
                     break;
                 }
+
+                return $zone;
             }
         }
 
